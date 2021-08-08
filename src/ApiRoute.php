@@ -38,7 +38,8 @@ class ApiRoute
 	var $action = "";
     var $class_name = "";
     var $api_path = "";
-
+	var $item = null;
+	var $items = null;
 
 
 	/**
@@ -145,25 +146,58 @@ class ApiRoute
 
 
 
+	/**
+	 * Find items
+	 */
+	function findItems(Request $request, $vars)
+	{
+		$class_name = $this->class_name;
+		$targets = $class_name::all();
+		return $targets;
+	}
+
+
+
+	/**
+	 * Find by id
+	 */
+	function findById(Request $request, $vars)
+	{
+		$class_name = $this->class_name;
+		if (!isset($vars["id"]))
+		{
+			return null;
+		}
+		$id = (int)($vars["id"]);
+		$item = $class_name::find($id);
+		return $item;
+	}
+
+
+
     /**
 	 * List action
 	 */
 	function actionList(Request $request, ?Response $response, $vars)
 	{
 		$api_result = new ApiResult();
-        $class_name = $this->class_name;
 		$this->action = "list";
 
 		try
 		{
-			$targets = $class_name::all();
-			$result = [];
+			/* Find items */
+			$targets = $this->findItems($request, $vars);
+
+			/* Set items */
+			$this->items = [];
 			foreach ($targets->all() as $item)
 			{
 				$item = $this->fromDatabase($item);
-				$result[] = $item;
+				$this->items[] = $item;
 			}
-			$api_result->success( $result );
+
+			/* Set result */
+			$api_result->success( $this->items );
 		}
 		catch (\Exception $e)
 		{
@@ -186,13 +220,13 @@ class ApiRoute
 	{
 		$api_result = new ApiResult();
         $class_name = $this->class_name;
-		$id = isset($vars["id"]) ? $vars["id"] : "";
 		$this->action = "getById";
 
-		$item = $class_name::find($id);
-		if ($item != null)
+		/* Find item */
+		$this->item = $this->findById($request, $vars);
+		if ($this->item != null)
 		{
-			$result = $this->fromDatabase($item->getAttributes());
+			$result = $this->fromDatabase($this->item->getAttributes());
 			$api_result->success( $result );
 		}
 		else
@@ -236,17 +270,17 @@ class ApiRoute
 				$data = $this->toDatabase($data);
 				
 				/* Create item */
-				$item = new $class_name();
+				$this->item = new $class_name();
 				foreach ($data as $key => $value)
 				{
-					$item->$key = $value;
+					$this->item->$key = $value;
 				}
 
 				/* Save item */
-				$item->save();
+				$this->item->save();
 
 				/* Set result */
-				$result = $this->fromDatabase($item->getAttributes());
+				$result = $this->fromDatabase($this->item->getAttributes());
 				$api_result->success( $result );
 			}
 		}
@@ -283,10 +317,8 @@ class ApiRoute
 			}
 			else
 			{
-				$id = isset($vars["id"]) ? $vars["id"] : "";
-				
-				$item = $class_name::find($id);
-				if ($item == null)
+				$this->item = $this->findById($request, $vars);
+				if ($this->item == null)
 				{
 					$api_result->exception( new \Helper\Exception\NotFoundException() );
 				}
@@ -298,12 +330,12 @@ class ApiRoute
 					/* Edit item */
 					foreach ($data as $key => $value)
 					{
-						$item->$key = $value;
+						$this->item->$key = $value;
 					}
-					$item->save();
+					$this->item->save();
 					
 					/* Set result */
-					$result = $this->fromDatabase($item->getAttributes());
+					$result = $this->fromDatabase($this->item->getAttributes());
 					$api_result->success( $result );
 				}
 				
@@ -330,15 +362,14 @@ class ApiRoute
 		$class_name = $this->class_name;
 		$this->action = "delete";
 
-		$id = isset($vars["id"]) ? $vars["id"] : "";
-		$item = $class_name::find($id);
-		if ($item != null)
+		$this->item = $this->findById($request, $vars);
+		if ($this->item != null)
 		{
 			/* Delete item */
-			$item->delete();
+			$this->item->delete();
 			
 			/* Set result */
-			$result = $this->fromDatabase($item->getAttributes());
+			$result = $this->fromDatabase($this->item->getAttributes());
 			$api_result->success( $result );
 		}
 		else
