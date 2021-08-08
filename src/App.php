@@ -269,7 +269,8 @@ class App
 	static function createDatabase()
 	{
 		$capsule = new Capsule;
-		$capsule->addConnection([
+		$capsule->addConnection
+		([
 			'driver'    => 'mysql',
 			'host'      => getenv("DB_HOSTNAME"),
 			'database'  => getenv("DB_NAME"),

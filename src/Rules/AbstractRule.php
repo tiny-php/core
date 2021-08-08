@@ -28,6 +28,8 @@
 
 namespace TinyPHP\Rules;
 
+use TinyPHP\ApiRoute;
+
 
 class AbstractRule
 {

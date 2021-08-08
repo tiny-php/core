@@ -56,36 +56,36 @@ class ApiRoute
 	 */
 	function routes(RouteCollector $routes)
 	{
-        if ($this->$api_path != "")
+        if ($this->api_path != "")
         {
             $routes->addRoute
             (
                 'GET',
-                '/' . $this->$api_path . '/',
+                '/' . $this->api_path . '/',
                 [$this, "actionList"]
             );
             $routes->addRoute
             (
                 'GET',
-                '/' . $this->$api_path . '/{id:\d+}/',
+                '/' . $this->api_path . '/{id:\d+}/',
                 [$this, "actionGetById"]
             );
             $routes->addRoute
             (
                 'POST',
-                '/' . $this->$api_path . '/create/',
+                '/' . $this->api_path . '/create/',
                 [$this, "actionCreate"]
             );
             $routes->addRoute
             (
                 'POST',
-                '/' . $this->$api_path . '/{id:\d+}/edit/',
+                '/' . $this->api_path . '/{id:\d+}/edit/',
                 [$this, "actionEdit"]
             );
             $routes->addRoute
             (
                 'POST',
-                '/' . $this->$api_path . '/{id:\d+}/delete/',
+                '/' . $this->api_path . '/{id:\d+}/delete/',
                 [$this, "actionDelete"]
             );
         }
