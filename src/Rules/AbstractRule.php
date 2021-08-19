@@ -28,14 +28,14 @@
 
 namespace TinyPHP\Rules;
 
-use TinyPHP\ApiRoute;
+use TinyPHP\ApiCrudRoute;
 
 
 class AbstractRule
 {
     var $fields = null;
 
-    function constructor($params = [])
+    function __construct($params = [])
     {
         foreach ($params as $key => $value)
             $this->$key = $value;
@@ -45,7 +45,7 @@ class AbstractRule
     /**
 	 * From database
 	 */
-	function fromDatabase(ApiRoute $router, $item, $old_item)
+	function fromDatabase(ApiCrudRoute $router, $item, $old_item)
 	{
         return $item;
     }
@@ -54,7 +54,7 @@ class AbstractRule
     /**
 	 * To database
 	 */
-	function toDatabase(ApiRoute $router, $item, $old_item)
+	function toDatabase(ApiCrudRoute $router, $item, $old_item)
 	{
         return $item;
     }

@@ -28,7 +28,9 @@
 
 namespace TinyPHP\Rules;
 
-use TinyPHP\ApiRoute;
+use Illuminate\Database\Eloquent\Model;
+use TinyPHP\ApiCrudRoute;
+use TinyPHP\Utils;
 
 
 class AllowFields extends AbstractRule
@@ -39,21 +41,10 @@ class AllowFields extends AbstractRule
 	/**
 	 * From database
 	 */
-	function fromDatabase(ApiRoute $router, $item, $old_item)
+	function fromDatabase(ApiCrudRoute $router, $item, $old_item)
 	{
-        if ($this->fields == null) return $item;
-		
-		/* Remove not allowed keys */
-		$keys = array_keys($item);
-		for ($i=0; i<count($keys); $i++)
-		{
-			$field_name = $keys[$i];
-			if (!in_array($field_name, $this->fields))
-			{
-                unset($item[$field_name]);
-			}
-		}
-		
+        if ($this->fields === null) return $item;
+		$item = Utils::object_intersect($item, $this->fields);
 		return $item;
     }
 
@@ -61,21 +52,10 @@ class AllowFields extends AbstractRule
     /**
 	 * To database
 	 */
-	function toDatabase(ApiRoute $router, $item, $old_item)
+	function toDatabase(ApiCrudRoute $router, $item, $old_item)
 	{
-        if ($this->fields == null) return $item;
-		
-		/* Remove not allowed keys */
-		$keys = array_keys($item);
-		for ($i=0; i<count($keys); $i++)
-		{
-			$field_name = $keys[$i];
-			if (!in_array($field_name, $this->fields))
-			{
-                unset($item[$field_name]);
-			}
-		}
-		
+        if ($this->fields === null) return $item;
+		$item = Utils::object_intersect($item, $this->fields);
 		return $item;
     }
     

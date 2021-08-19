@@ -91,7 +91,7 @@ class App
 			require_once $file_name;
 		}
 
-		$router = app()->get(\FastRoute\RouteCollector::class);
+		$router = app(\FastRoute\RouteCollector::class);
 		$obj = new $class_name();
 		$obj->routes($router);
 		$this->routes[] = $class_name;
@@ -116,39 +116,80 @@ class App
 	{
 		$this->commands[] = $class_name;
 	}
-
-
-
+	
+	
+	
+	/**
+	 * Action error
+	 */
+	function actionError($container, $e)
+	{
+		$container->response = make(ApiResult::class)
+			->exception($e)
+			->getResponse()
+			->setStatusCode(Response::HTTP_INTERNAL_SERVER_ERROR)
+		;
+		return $container;
+	}
+	
+	
+	
+	/**
+	 * Action error
+	 */
+	function actionNotFound($container, $e)
+	{
+		$container->response = make(ApiResult::class)
+			->error( "HTTP 404 Not Found", -1 )
+			->getResponse()
+			->setStatusCode(Response::HTTP_NOT_FOUND)
+		;
+		return $container;
+	}
+	
+	
+	
+	/**
+	 * Method not allowed
+	 */
+	function actionNotAllowed()
+	{
+		$container->response = make(ApiResult::class)
+			->error( "HTTP 405 Method Not Allowed", -1 )
+			->getResponse()
+			->setStatusCode(Response::HTTP_METHOD_NOT_ALLOWED)
+		;
+		return $container;
+	}
+	
+	
+	
 	/**
 	 * Method not found
 	 */
 	function methodNotFound($routeInfo)
 	{
-		( new ApiResult() )
-			->error( "HTTP 404 Not Found", -1 )
-			->getResponse()
-			->setStatusCode(Response::HTTP_NOT_FOUND)
-			->send()
-		;
+		$container = make(RenderContainer::class);
+		$container->request = \Symfony\Component\HttpFoundation\Request::createFromGlobals();
+		$container = $this->actionNotFound($container);
+		if ($container->reponse) $container->response->send();
 	}
-
-
-
+	
+	
+	
 	/**
 	 * Method not allowed
 	 */
 	function methodNotAllowed($routeInfo)
 	{
-		( new ApiResult() )
-			->error( "HTTP 405 Method Not Allowed", -1 )
-			->getResponse()
-			->setStatusCode(Response::HTTP_METHOD_NOT_ALLOWED)
-			->send()
-		;
+		$container = make(RenderContainer::class);
+		$container->request = \Symfony\Component\HttpFoundation\Request::createFromGlobals();
+		$container = $this->actionNotAllowed($container);
+		if ($container->reponse) $container->response->send();
 	}
-
-
-
+	
+	
+	
 	/**
 	 * Method found
 	 */
@@ -156,40 +197,45 @@ class App
 	{
 		$handler = $routeInfo[1];
 		$vars = $routeInfo[2];
-
-		$request = \Symfony\Component\HttpFoundation\Request::createFromGlobals();
-		$response = null;
-
-		if ($handler instanceof \Closure)
+		
+		$container = make(RenderContainer::class);
+		$container->request = \Symfony\Component\HttpFoundation\Request::createFromGlobals();
+		$container->response = null;
+		$container->vars = $vars;
+		
+		try
 		{
-			$handler($vars);
+			if ($handler instanceof \Closure)
+			{
+				$container = $handler($container);
+			}
+			else if (is_array( $handler ))
+			{
+				$container->action = $handler[1];
+				
+				$obj = $handler[0];
+				if (is_object($obj))
+				{
+					$container = $obj->request_before($container);
+				}
+				if ($container->response == null)
+				{
+					$container = call_user_func_array($handler, [$container]);
+				}
+				if (is_object($obj))
+				{
+					$container =	$obj->request_after($container);
+				}
+			}
 		}
-		else if (is_array( $handler ))
+		catch (\Exception $e)
 		{
-			$obj = $handler[0];
-			if (is_object($obj))
-			{
-				list($request, $response, $vars) =
-					$obj->request_before($request, $response, $vars);
-			}
-			if ($response == null)
-			{
-				list($request, $response, $vars) = call_user_func_array
-				(
-					$handler,
-					[$request, $response, $vars]
-				);
-			}
-			if (is_object($obj))
-			{
-				list($request, $response, $vars) =
-					$obj->request_after($request, $response, $vars);
-			}
+			$container = $this->actionError($container, $e);
 		}
 		
-		if ($response != null)
+		if ($container->response != null)
 		{
-			$response->send();
+			$container->response->send();
 		}
 	}
 
@@ -201,8 +247,8 @@ class App
 	function dispatchUri($method, $uri)
 	{
 		/* Create dispatcher */
-		$route_collector = app()->get(\FastRoute\RouteCollector::class);
-		$dispatcher = app()->get(\FastRoute\Dispatcher::class);
+		$route_collector = app(\FastRoute\RouteCollector::class);
+		$dispatcher = app(\FastRoute\Dispatcher::class);
 
 		/* Strip query string (?foo=bar) and decode URI */
 		if (false !== $pos = strpos($uri, '?'))
@@ -232,18 +278,18 @@ class App
 		}
 		
 	}
-
-
-
+	
+	
+	
 	/**
 	 * Console app created
 	 */
 	function consoleAppCreated()
 	{
 	}
-
-
-
+	
+	
+	
 	/**
 	 * Create console app
 	 */
@@ -261,19 +307,21 @@ class App
 
 		return $this->console;
 	}
-
-
+	
+	
+	
 	/**
-	 * Create database
+	 * Connect to database
 	 */
-	static function createDatabase()
+	static function connectToDatabase()
 	{
 		$capsule = new Capsule;
 		$capsule->addConnection
 		([
 			'driver'    => 'mysql',
-			'host'      => getenv("DB_HOSTNAME"),
-			'database'  => getenv("DB_NAME"),
+			'host'      => getenv("DB_HOST"),
+			'port'      => getenv("DB_PORT"),
+			'database'  => getenv("DB_DATABASE"),
 			'username'  => getenv("DB_USERNAME"),
 			'password'  => getenv("DB_PASSWORD"),
 			'charset'   => 'utf8',

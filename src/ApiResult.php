@@ -37,10 +37,13 @@ use Symfony\Component\HttpFoundation\Response;
  */
 class ApiResult
 {
-	var $data = null;
+	var $result = null;
 	var $error_code = 0;
 	var $error_name = "";
 	var $error_str = "";
+	var $error_file = "";
+	var $error_line = "";
+	var $error_trace = "";
 	var $status_code = Response::HTTP_OK;
 
 
@@ -48,9 +51,9 @@ class ApiResult
 	/**
 	 * Success
 	 */
-	function success($data)
+	function success($result)
 	{
-		$this->data = $data;
+		$this->result = $result;
 		$this->clearError();
 		$this->error_code = 1;
 		return $this;
@@ -80,6 +83,9 @@ class ApiResult
 		$this->error_str = $e->getMessage();
 		$this->error_code = $e->getCode();
 		$this->error_name = str_replace("\\", ".", get_class($e));
+		$this->error_file = $e->getFile();
+		$this->error_line = $e->getLine();
+		$this->error_trace = $e->getTrace();
 		if ($this->error_code >= 0)
 		{
 			$this->error_code = -1;
@@ -120,7 +126,7 @@ class ApiResult
 	{
 		$res =
 		[
-			"data" => $this->data,
+			"result" => $this->result,
 			"error" =>
 			[
 				"code" => $this->error_code,
@@ -128,6 +134,15 @@ class ApiResult
 				"str" => $this->error_str,
 			],
 		];
+		
+		$is_debug = getenv("APP_DEBUG");
+		if ($is_debug && $this->error_name != "")
+		{
+			$res["error"]["file"] = $this->error_file;
+			$res["error"]["line"] = $this->error_line;
+			$res["error"]["trace"] = $this->error_trace;
+		}
+		
 		return new Response
 		(
 			json_encode($res) . "\n",

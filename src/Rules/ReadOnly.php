@@ -28,7 +28,7 @@
 
 namespace TinyPHP\Rules;
 
-use TinyPHP\ApiRoute;
+use TinyPHP\ApiCrudRoute;
 
 
 class ReadOnly extends AbstractRule
@@ -41,7 +41,7 @@ class ReadOnly extends AbstractRule
     /**
 	 * To database
 	 */
-	function toDatabase(ApiRoute $router, $item, $old_item)
+	function toDatabase(ApiCrudRoute $router, $item, $old_item)
 	{
 		if ($router->action == "create" && !$this->can_create)
 		{

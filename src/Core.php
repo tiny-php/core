@@ -28,21 +28,23 @@
 
 namespace TinyPHP;
 
+use Symfony\Component\HttpFoundation\Response;
+
 
 class Core
 {
-
 	static $di_container = null;
 
 
 	/**
 	 * Build container
 	 */
-	static function buildContainer($defs)
+	static function start($defs)
 	{
 		$container_builder = new \DI\ContainerBuilder();
 		$container_builder->addDefinitions($defs);
 		static::$di_container = $container_builder->build();
+		set_exception_handler([static::class, "fatalError"]);
 	}
 
 
@@ -52,6 +54,18 @@ class Core
 	static function app()
 	{
 		return static::$di_container->get("App");
+	}
+	
+	
+	/**
+	 * Fatal error
+	 */
+	static function fatalError($e)
+	{
+		$container = make(RenderContainer::class);
+		$container->request = \Symfony\Component\HttpFoundation\Request::createFromGlobals();
+		$container = app()->actionError($container, $e);
+		if ($container->response) $container->response->send();
 	}
 }
 

@@ -34,6 +34,6 @@ class ItemNotFoundException extends \Exception
     public function __construct($message = 'Item', Throwable $previous = null)
     {
         $this->message = $message . " not found";
-        $this->code = \Helper\App::ERROR_NOT_FOUND;
+        $this->code = \TinyPHP\App::ERROR_NOT_FOUND;
     }
 }

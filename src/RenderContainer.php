@@ -26,21 +26,24 @@
  *  SOFTWARE.
  */
 
+namespace TinyPHP;
 
-/**
- * Get instance
- */
-function app($name = "")
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+
+
+class RenderContainer
 {
-	if ($name == "") return \TinyPHP\Core::$di_container->get("App");
-	return \TinyPHP\Core::$di_container->get($name);
-}
-
-
-/**
- * Make instance
- */
-function make($name, $params = [])
-{
-	return \TinyPHP\Core::$di_container->make($name, $params);
+	var $action = "";
+	var $request = null;
+	var $response = null;
+	var $vars = null;
+	
+	
+	function setResponse(Response $response)
+	{
+		$this->response = $response;
+		return $this;    
+	}
+	
 }
