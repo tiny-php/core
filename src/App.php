@@ -105,6 +105,7 @@ class App
 	function addModel($class_name)
 	{
 		$this->models[] = $class_name;
+		$class_name::observe(ModelObserver::class);
 	}
 
 
@@ -328,8 +329,9 @@ class App
 			'collation' => 'utf8_unicode_ci',
 			'prefix'    => '',
 		]);
-
-		// $capsule->setEventDispatcher(new Dispatcher(new Container));
+		
+		// Set event dispatcher
+		$capsule->setEventDispatcher( app(\Illuminate\Events\Dispatcher::class) );
 
 		// Set the cache manager instance used by connections... (optional)
 		//$capsule->setCacheManager();
@@ -339,7 +341,7 @@ class App
 
 		// Setup the Eloquent ORM... (optional; unless you've used setEventDispatcher())
 		$capsule->bootEloquent();
-
+		
 		return $capsule;
 	}
 }
