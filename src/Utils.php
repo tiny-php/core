@@ -148,9 +148,13 @@ class Utils
 	 */
 	static function attr($obj, $keys, $default_value = null)
 	{
-		if (gettype($keys) != "array") $keys = [ $keys ];
-		else $keys = array_values($keys);
+		if (gettype($keys) != "array")
+		{
+			if (isset($obj[$keys])) return $obj[$keys];
+			return $default_value;
+		}
 		
+		$keys = array_values($keys);
 		while (count($keys) != 0)
 		{
 			$key = $keys[0];

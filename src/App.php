@@ -55,14 +55,16 @@ class App
 
 
 	/**
-	 * Init
+	 * Init app
 	 */
 	function init()
 	{
+		/* Connect to database */
+		app("connectToDatabase");
 	}
-
-
-
+	
+	
+	
 	/**
 	 * Web app run
 	 */
@@ -78,8 +80,8 @@ class App
 
 		$this->dispatchUri($method, $uri);
 	}
-
-
+	
+	
 	
 	/**
 	 * Add routes from class
@@ -96,9 +98,9 @@ class App
 		$obj->routes($router);
 		$this->routes[] = $class_name;
 	}
-
-
-
+	
+	
+	
 	/**
 	 * Add console command
 	 */
@@ -107,9 +109,9 @@ class App
 		$this->models[] = $class_name;
 		$class_name::observe(ModelObserver::class);
 	}
-
-
-
+	
+	
+	
 	/**
 	 * Add console command
 	 */
@@ -239,9 +241,9 @@ class App
 			$container->response->send();
 		}
 	}
-
-
-
+	
+	
+	
 	/**
 	 * Run dispatcher
 	 */
