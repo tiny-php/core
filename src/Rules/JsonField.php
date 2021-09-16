@@ -26,18 +26,38 @@
  *  SOFTWARE.
  */
 
-namespace TinyPHP\Exception;
+namespace TinyPHP\Rules;
 
-use Symfony\Component\HttpFoundation\Response;
+use TinyPHP\ApiCrudRoute;
 
 
-class NotFoundException extends \Exception
+class JsonField extends AbstractRule
 {
-    var $http_code;
-    public function __construct($message = 'Item', Throwable $previous = null)
-    {
-        $this->message = $message . " not found";
-        $this->code = \Helper\App::ERROR_HTTP_NOT_FOUND;
-        $this->http_code = Response::HTTP_NOT_FOUND;
-    }
+	var $api_name = "";
+
+
+	 /**
+	 * From database
+	 */
+	function fromDatabase(ApiCrudRoute $router, $item, $old_item)
+	{
+		if (isset($item[$this->api_name]))
+		{
+			$item[$this->api_name] = json_decode($item[$this->api_name]);
+		}
+		return $item;
+	}
+
+
+	/**
+	 * To database
+	 */
+	function toDatabase(ApiCrudRoute $router, $item, $old_item)
+	{
+		if (isset($item[$this->api_name]))
+		{
+			$item[$this->api_name] = json_encode($item[$this->api_name]);
+		}
+		return $item;
+	}
 }

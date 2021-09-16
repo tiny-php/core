@@ -41,7 +41,10 @@ class App
 	var $models = [];
 	var $commands = [];
 
-	const ERROR_NOT_FOUND = -2;
+	const ERROR_OK = 1;
+	const ERROR_ITEM_NOT_FOUND = -2;
+	const ERROR_HTTP_NOT_FOUND = -404;
+	const ERROR_HTTP_METHOD_NOT_ALLOWED = -405;
 
 
 	/**
@@ -127,10 +130,15 @@ class App
 	 */
 	function actionError($container, $e)
 	{
+		$http_code = Response::HTTP_INTERNAL_SERVER_ERROR;
+		if (property_exists($e, "http_code"))
+		{
+			$http_code = $e->http_code;
+		}
 		$container->response = make(ApiResult::class)
 			->exception($e)
 			->getResponse()
-			->setStatusCode(Response::HTTP_INTERNAL_SERVER_ERROR)
+			->setStatusCode($http_code)
 		;
 		return $container;
 	}
@@ -140,7 +148,7 @@ class App
 	/**
 	 * Action error
 	 */
-	function actionNotFound($container, $e)
+	function actionNotFound($container)
 	{
 		$container->response = make(ApiResult::class)
 			->error( "HTTP 404 Not Found", -1 )
@@ -155,7 +163,7 @@ class App
 	/**
 	 * Method not allowed
 	 */
-	function actionNotAllowed()
+	function actionNotAllowed($container)
 	{
 		$container->response = make(ApiResult::class)
 			->error( "HTTP 405 Method Not Allowed", -1 )
@@ -175,7 +183,7 @@ class App
 		$container = make(RenderContainer::class);
 		$container->request = \Symfony\Component\HttpFoundation\Request::createFromGlobals();
 		$container = $this->actionNotFound($container);
-		if ($container->reponse) $container->response->send();
+		if ($container->response) $container->response->send();
 	}
 	
 	
@@ -188,7 +196,7 @@ class App
 		$container = make(RenderContainer::class);
 		$container->request = \Symfony\Component\HttpFoundation\Request::createFromGlobals();
 		$container = $this->actionNotAllowed($container);
-		if ($container->reponse) $container->response->send();
+		if ($container->response) $container->response->send();
 	}
 	
 	
@@ -227,7 +235,7 @@ class App
 				}
 				if (is_object($obj))
 				{
-					$container =	$obj->request_after($container);
+					$container = $obj->request_after($container);
 				}
 			}
 		}
@@ -258,7 +266,6 @@ class App
 		{
 			$uri = substr($uri, 0, $pos);
 		}
-		$uri = rawurldecode($uri);
 
 		/* Dispatch page */
 		$routeInfo = $dispatcher->dispatch($method, $uri);

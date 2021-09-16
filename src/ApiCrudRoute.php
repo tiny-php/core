@@ -171,7 +171,8 @@ class ApiCrudRoute
 			$this->container->action == "actionEdit"
 		)
 		{
-			if ($this->container->request->headers->get('Content-Type') != 'application/json')
+			$content_type = $this->container->request->headers->get('Content-Type');
+			if (substr($content_type, 0, strlen('application/json')) != 'application/json')
 			{
 				throw new \Exception("Content type must be application/json");
 			}
@@ -293,7 +294,7 @@ class ApiCrudRoute
 		$instance = new $class_name();
 		
 		/* Get query */
-		$id = $this->container->vars["id"];
+		$id = urldecode($this->container->vars["id"]);
 		$query = $class_name::query()->where($instance->getKeyName(), "=", $id);
 		
 		/* Filter query */
@@ -373,7 +374,7 @@ class ApiCrudRoute
 			->setResponse
 			(
 				$this->api_result
-					->success( $result )
+					->success( $result, "Ok" )
 					->getResponse()
 			)
 		;
@@ -436,7 +437,7 @@ class ApiCrudRoute
 		(
 			$this
 				->api_result
-				->success(["item"=>$item])
+				->success(["item"=>$item], "Ok")
 				->getResponse()
 		);
 	}
@@ -470,7 +471,7 @@ class ApiCrudRoute
 		
 		/* To database */
 		$data = $this->toDatabase($data);
-            
+        
 		/* Update item */
 		$this->updateItem($data);
 		
@@ -482,7 +483,7 @@ class ApiCrudRoute
 		(
 			$this
 				->api_result
-				->success(["item"=>$item])
+				->success(["item"=>$item], "Ok")
 				->getResponse()
 		);
 	}
@@ -513,7 +514,7 @@ class ApiCrudRoute
 		(
 			$this
 				->api_result
-				->success(["item"=>$item])
+				->success(["item"=>$item], "Ok")
 				->getResponse()
 		);
 	}

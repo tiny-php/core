@@ -51,16 +51,17 @@ class ApiResult
 	/**
 	 * Success
 	 */
-	function success($result)
+	function success($result, $error_str = "", $error_code = 1)
 	{
-		$this->result = $result;
 		$this->clearError();
-		$this->error_code = 1;
+		$this->result = $result;
+		$this->error_str = $error_str;
+		$this->error_code = $error_code;
 		return $this;
 	}
-
-
-
+	
+	
+	
 	/**
 	 * Error
 	 */

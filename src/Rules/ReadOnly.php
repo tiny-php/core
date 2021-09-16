@@ -51,6 +51,6 @@ class ReadOnly extends AbstractRule
 		{
             unset($item[$field_name]);
 		}
-		return item;
+		return $item;
 	}
 }
