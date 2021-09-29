@@ -32,7 +32,7 @@
  */
 function app($name = "")
 {
-	if ($name == "") return \TinyPHP\Core::$di_container->get("App");
+	if ($name == "") return \TinyPHP\Core::$di_container->get("app");
 	return \TinyPHP\Core::$di_container->get($name);
 }
 

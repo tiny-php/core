@@ -328,11 +328,11 @@ class App
 		$capsule->addConnection
 		([
 			'driver'    => 'mysql',
-			'host'      => getenv("DB_HOST"),
-			'port'      => getenv("DB_PORT"),
-			'database'  => getenv("DB_DATABASE"),
-			'username'  => getenv("DB_USERNAME"),
-			'password'  => getenv("DB_PASSWORD"),
+			'host'      => env("MYSQL_HOST"),
+			'port'      => env("MYSQL_PORT"),
+			'database'  => env("MYSQL_DATABASE"),
+			'username'  => env("MYSQL_USERNAME"),
+			'password'  => env("MYSQL_PASSWORD"),
 			'charset'   => 'utf8',
 			'collation' => 'utf8_unicode_ci',
 			'prefix'    => '',

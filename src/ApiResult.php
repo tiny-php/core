@@ -136,7 +136,7 @@ class ApiResult
 			],
 		];
 		
-		$is_debug = getenv("APP_DEBUG");
+		$is_debug = env("APP_DEBUG");
 		if ($is_debug && $this->error_name != "")
 		{
 			$res["error"]["file"] = $this->error_file;
