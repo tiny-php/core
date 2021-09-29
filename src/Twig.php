@@ -28,51 +28,68 @@
 
 namespace TinyPHP;
 
-use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
-
-
-class RenderContainer
+class Twig
 {
-	var $action = "";
-	var $request = null;
-	var $response = null;
-	var $vars = null;
-	var $context = [];
+	var $twig = null;
 	
 	
 	/**
-	 * Set response
+	 * Constructor
 	 */
-	function setResponse(Response $response)
+	function __construct()
 	{
-		$this->response = $response;
-		return $this;    
+		$this->create();
 	}
 	
 	
 	
 	/**
-	 * Set context
+	 * Create twig
 	 */
-	function setContext($key, $value)
+	function create()
 	{
-		$this->context[$key] = $value;
-	}
-	
-	
-	
-	/**
-	 * Set content
-	 */
-	function setContent($content)
-	{
-		if ($this->response == null)
+		/* Restore twig */
+		if ($this->twig != null)
 		{
-			$this->response = new Response("", Response::HTTP_OK, ['content-type' => 'text/html']);
+			return $this->twig;
 		}
-		$this->response->setContent($content);
-		return $this;
+		
+		$twig_opt = array
+		(
+			'autoescape'=>true,
+			'charset'=>'utf-8',
+			'optimizations'=>-1,
+		);
+		
+		/* Twig cache */
+		$twig_cache = true;
+		if (defined("TWIG_CACHE"))
+		{
+			$twig_cache = TWIG_CACHE;
+		}
+		
+		/* Enable cache */
+		if ($twig_cache)
+		{
+			$twig_opt['cache'] = ROOT_PATH . 'var/cache/twig';
+			$twig_opt['auto_reload'] = true;
+		}
+		
+		/* Create twig loader */
+		$twig_loader = new \Twig\Loader\FilesystemLoader();
+		$twig_loader->addPath(ROOT_PATH . '/app/Templates', 'app');
+		
+		/* Create twig instance */
+		$this->twig = new \Twig\Environment
+		(
+			$twig_loader,
+			$twig_opt
+		);
+		
+		/* Set strategy */
+		$this->twig->getExtension(\Twig\Extension\EscaperExtension::class)->setDefaultStrategy('html');
+		
+		return $this->twig;
 	}
 	
 	
@@ -80,16 +97,27 @@ class RenderContainer
 	/**
 	 * Render template
 	 */
-	function render($template)
+	function render($template, $context)
 	{
-		$twig = app("render");
-		$content = $twig->render($template, $this->context);
-		$this->response = new Response
-		(
-			$content,
-			Response::HTTP_OK,
-			['content-type' => 'text/html']
-		);
-		return $this;
+		if (gettype($template) == 'array')
+		{
+			foreach ($template as $t)
+			{
+				try
+				{
+					$res = $this->twig->render($t, $context);
+					return $res;
+				}
+				catch (\Twig\Error\LoaderError $err)
+				{
+				}
+			}
+		}
+		else
+		{
+			return $this->twig->render($template, $context);
+		}
+		return "";
 	}
+	
 }

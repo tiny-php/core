@@ -64,6 +64,9 @@ class App
 	{
 		/* Connect to database */
 		app("connectToDatabase");
+		
+		/* Init render */
+		app("render");
 	}
 	
 	
@@ -76,11 +79,7 @@ class App
 		/* Fetch method and URI from somewhere */
 		$method = $_SERVER['REQUEST_METHOD'];
 		$uri = $_SERVER['REQUEST_URI'];
-
-		/* Remove api */
-		$uri = preg_replace("/^\/api/", "", $uri);
-		$_SERVER['REQUEST_URI'] = $uri;
-
+		
 		$this->dispatchUri($method, $uri);
 	}
 	
