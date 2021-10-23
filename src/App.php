@@ -325,6 +325,8 @@ class App
 	static function connectToDatabase()
 	{
 		$capsule = new Capsule;
+		
+		/*
 		$capsule->addConnection
 		([
 			'driver'    => 'mysql',
@@ -337,6 +339,7 @@ class App
 			'collation' => 'utf8_unicode_ci',
 			'prefix'    => '',
 		]);
+		*/
 		
 		// Set event dispatcher
 		$capsule->setEventDispatcher( app(\Illuminate\Events\Dispatcher::class) );
