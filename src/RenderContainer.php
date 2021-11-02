@@ -37,6 +37,7 @@ class RenderContainer
 	var $action = "";
 	var $request = null;
 	var $response = null;
+	var $handler = null;
 	var $vars = null;
 	var $context = [];
 	

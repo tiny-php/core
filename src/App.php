@@ -211,6 +211,7 @@ class App
 		$container = make(RenderContainer::class);
 		$container->request = \Symfony\Component\HttpFoundation\Request::createFromGlobals();
 		$container->response = null;
+		$container->handler = $handler;
 		$container->vars = $vars;
 		
 		try

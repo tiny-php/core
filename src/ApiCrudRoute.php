@@ -146,6 +146,15 @@ class ApiCrudRoute
 	
 	
 	/**
+	 * Process after
+	 */
+	function process_after()
+	{
+	}
+	
+	
+	
+	/**
 	 * Init action
 	 */
 	public function init()
@@ -370,12 +379,16 @@ class ApiCrudRoute
 		}
 		
 		/* Set result */
+		$this->api_result->success( $result, "Ok" );
+		
+		/* Process after */
+		$this->process_after();
+		
+		/* Set result */
 		return $container
 			->setResponse
 			(
-				$this->api_result
-					->success( $result, "Ok" )
-					->getResponse()
+				$this->api_result->getResponse()
 			)
 		;
 	}
@@ -399,6 +412,9 @@ class ApiCrudRoute
 		{
 			throw new ItemNotFoundException();
 		}
+		
+		/* Process after */
+		$this->process_after();
 		
 		/* Set result */
 		return $container->setResponse( $this->api_result->getResponse() );
@@ -433,13 +449,13 @@ class ApiCrudRoute
 		$item = $this->fromDatabase($this->item);
 		
 		/* Set result */
-		return $container->setResponse
-		(
-			$this
-				->api_result
-				->success(["item"=>$item], "Ok")
-				->getResponse()
-		);
+		$this->api_result->success(["item"=>$item], "Ok");
+		
+		/* Process after */
+		$this->process_after();
+		
+		/* Set result */
+		return $container->setResponse( $this->api_result->getResponse() );
 	}
 	
 	
@@ -477,14 +493,17 @@ class ApiCrudRoute
 		
 		/* From database */
 		$item = $this->fromDatabase($this->item);
-
+		
+		/* Set result */
+		$this->api_result->success(["item"=>$item], "Ok");
+		
+		/* Process after */
+		$this->process_after();
+		
 		/* Set result */
 		return $container->setResponse
 		(
-			$this
-				->api_result
-				->success(["item"=>$item], "Ok")
-				->getResponse()
+			$this->api_result->getResponse()
 		);
 	}
 	
@@ -508,14 +527,17 @@ class ApiCrudRoute
 		
 		/* From database */
 		$item = $this->fromDatabase($this->item);
-
+		
+		/* Set result */
+		$this->api_result->success(["item"=>$item], "Ok");
+		
+		/* Process after */
+		$this->process_after();
+		
 		/* Set result */
 		return $container->setResponse
 		(
-			$this
-				->api_result
-				->success(["item"=>$item], "Ok")
-				->getResponse()
+			$this->api_result->getResponse()
 		);
 	}
 }
