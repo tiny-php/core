@@ -33,29 +33,57 @@ use TinyPHP\ApiCrudRoute;
 
 class AbstractRule
 {
-    var $fields = null;
+	var $fields = null;
 
-    function __construct($params = [])
-    {
-        foreach ($params as $key => $value)
-            $this->$key = $value;
-    }
+	function __construct($params = [])
+	{
+		foreach ($params as $key => $value)
+			$this->$key = $value;
+	}
 
-
-    /**
+	
+	
+	/**
+	 * Before query
+	 */
+	function beforeQuery(ApiCrudRoute $router)
+	{
+	}
+	
+	
+	
+	/**
+	 * After query
+	 */
+	function afterQuery(ApiCrudRoute $router)
+	{
+	}
+	
+	
+	
+	/**
+	 * Create response
+	 */
+	function createResponse(ApiCrudRoute $router)
+	{
+	}
+	
+	
+	
+	/**
 	 * From database
 	 */
 	function fromDatabase(ApiCrudRoute $router, $item, $old_item)
 	{
-        return $item;
-    }
+		return $item;
+	}
 
 
-    /**
+	/**
 	 * To database
 	 */
 	function toDatabase(ApiCrudRoute $router, $item, $old_item)
 	{
-        return $item;
-    }
+		return $item;
+	}
 }

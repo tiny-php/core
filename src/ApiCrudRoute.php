@@ -45,6 +45,8 @@ class ApiCrudRoute
 	var $total = 0;
 	var $items = null;
 	var $item = null;
+	var $old_data = null;
+	var $new_data = null;
 
 
 	/**
@@ -120,6 +122,7 @@ class ApiCrudRoute
 	 */
 	function request_before(RenderContainer $container)
 	{
+		$this->action = $container->action;
 		$this->api_result = make(ApiResult::class);
 		$this->container = $container;
 		$this->rules = $this->getRules();
@@ -140,16 +143,18 @@ class ApiCrudRoute
 	 */
 	function request_after(RenderContainer $container)
 	{
+		/* Process after */
+		$this->after();
+		
+		/* Set result */
+		$container
+			->setResponse
+			(
+				$this->api_result->getResponse()
+			)
+		;
+		
 		return $container;
-	}
-	
-	
-	
-	/**
-	 * Process after
-	 */
-	function process_after()
-	{
 	}
 	
 	
@@ -160,7 +165,7 @@ class ApiCrudRoute
 	public function init()
 	{
 		/* Search action */
-		if ($this->container->action == "actionSearch")
+		if ($this->action == "actionSearch")
 		{
 			$max_limit = $this->getMaxLimit();
 			if ($this->container->request->query->has("start"))
@@ -175,16 +180,94 @@ class ApiCrudRoute
 			$this->initFilter();
 		}
 		
-		if (
-			$this->container->action == "actionCreate" ||
-			$this->container->action == "actionEdit"
-		)
+		/* Action create or edit */
+		if ($this->action == "actionCreate" || $this->action == "actionEdit")
 		{
 			$content_type = $this->container->request->headers->get('Content-Type');
 			if (substr($content_type, 0, strlen('application/json')) != 'application/json')
 			{
 				throw new \Exception("Content type must be application/json");
 			}
+			
+			$post = json_decode($this->container->request->getContent(), true);
+			if ($post == null)
+			{
+				throw new \Exception("Post is null");
+			}
+			
+			$this->old_data = Utils::attr($post, "item");
+			if ($this->old_data === null)
+			{
+				throw new \Exception("Field item is empty");
+			}
+		}
+	}
+	
+	
+	
+	/**
+	 * After action
+	 */
+	function after()
+	{
+	}
+	
+	
+	
+	/**
+	 * Validate request
+	 */
+	public function validate()
+	{
+	}
+	
+	
+	
+	/**
+	 * Can query
+	 */
+	function canQuery()
+	{
+		return true;
+	}
+	
+	
+	
+	/**
+	 * Before query
+	 */
+	function beforeQuery()
+	{
+		foreach ($this->rules as $rule)
+		{
+			$rule->beforeQuery($this);
+		}
+	}
+	
+	
+	
+	/**
+	 * After query
+	 */
+	function afterQuery()
+	{
+		foreach ($this->rules as $rule)
+		{
+			$rule->afterQuery($this);
+		}
+	}
+	
+	
+	
+	/**
+	 * Create response
+	 */
+	function createResponse()
+	{
+		/* Create response */
+		foreach ($this->rules as $rule)
+		{
+			$rule->createResponse($this);
 		}
 	}
 	
@@ -214,15 +297,6 @@ class ApiCrudRoute
 	public function allowFilterField($field_name, $op, $value)
 	{
 		return false;
-	}
-	
-	
-	
-	/**
-	 * Validate request
-	 */
-	public function validate()
-	{
 	}
 	
 	
@@ -310,58 +384,24 @@ class ApiCrudRoute
 		$query = $this->findQuery($query);
 		
 		$this->item = $query->first();
-	}
-	
-	
-	
-	/**
-	 * Create item
-	 */
-	public function createItem($data)
-	{
-		$class_name = $this->class_name;
-		$this->item = new $class_name();
-		foreach ($data as $key => $value) $this->item->$key = $value;
-		$this->item->save();
-		$this->item->refresh();
-	}
-	
-	
-	
-	/**
-	 * Update item
-	 */
-	public function updateItem($data)
-	{
-		$class_name = $this->model_name;
-		foreach ($data as $key => $value) $this->item->$key = $value;
-		if ($this->item)
+		
+		if ($this->item == null)
 		{
-			$this->item->save();
-			$this->item->refresh();
+			throw new ItemNotFoundException();
 		}
 	}
 	
 	
 	
 	/**
-	 * Delete item
+	 * Do action search
 	 */
-	public function deleteItem()
-	{
-		if ($this->item) $this->item->delete();
-	}
-	
-	
-	
-	/**
-	 * List action
-	 */
-	function actionSearch(RenderContainer $container)
+	function doActionSearch()
 	{
 		/* Find items */
 		$this->findItems();
-		
+			
+		/* Set response */
 		$result =
 		[
 			"items" => [],
@@ -380,164 +420,146 @@ class ApiCrudRoute
 		
 		/* Set result */
 		$this->api_result->success( $result, "Ok" );
-		
-		/* Process after */
-		$this->process_after();
-		
-		/* Set result */
-		return $container
-			->setResponse
-			(
-				$this->api_result->getResponse()
-			)
-		;
 	}
 	
 	
 	
 	/**
-	 * Get by id action
+	 * Do action get by id
 	 */
-	function actionGetById(RenderContainer $container)
+	function doActionGetById()
+	{
+		/* Find items */
+		$this->findItem();
+			
+		/* From database */
+		$item = $this->fromDatabase( $this->item->getAttributes() );
+		
+		/* Set result */
+		$this->api_result->success(["item" => $item ]);
+	}
+	
+	
+	
+	/**
+	 * Do action create
+	 */
+	function doActionCreate()
+	{
+		/* Convert to database */
+		$old_data = $this->toDatabase($this->old_data);
+			
+		/* Update in database */
+		$class_name = $this->class_name;
+		$this->item = new $class_name();
+		foreach ($old_data as $key => $value) $this->item->$key = $value;
+		$this->item->save();
+		$this->item->refresh();
+		
+		/* From database */
+		$this->new_data = $this->fromDatabase($this->item);
+		
+		/* Set result */
+		$this->api_result->success(["item"=>$this->new_data], "Ok");
+	}
+	
+	
+	
+	/**
+	 * Do action edit
+	 */
+	function doActionEdit()
 	{
 		/* Find item */
 		$this->findItem();
-		
-		if ($this->item != null)
-		{
-			$item = $this->fromDatabase( $this->item->getAttributes() );
-			$this->api_result->success(["item" => $item ]);
-		}
-		else
-		{
-			throw new ItemNotFoundException();
-		}
-		
-		/* Process after */
-		$this->process_after();
-		
-		/* Set result */
-		return $container->setResponse( $this->api_result->getResponse() );
-	}
-	
-	
-	
-	/**
-	 * Create action
-	 */
-	function actionCreate(RenderContainer $container)
-	{
-		$post = json_decode($container->request->getContent(), true);
-		if ($post == null)
-		{
-			throw new \Exception("Post is null");
-		}
-		
-		$data = Utils::attr($post, "item");
-		if ($data === null)
-		{
-			throw new \Exception("Field item is empty");
-		}
-		
+			
 		/* Convert to database*/
-        $data = $this->toDatabase($data);
-        
-        /* Create item */
-        $this->createItem($data);
+		$old_data = $this->toDatabase($this->old_data);
+		
+		/* Update in database */
+		$class_name = $this->model_name;
+		foreach ($old_data as $key => $value) $this->item->$key = $value;
+		if ($this->item)
+		{
+			$this->item->save();
+			$this->item->refresh();
+		}
 		
 		/* From database */
-		$item = $this->fromDatabase($this->item);
+		$this->new_data = $this->fromDatabase($this->item);
 		
 		/* Set result */
-		$this->api_result->success(["item"=>$item], "Ok");
-		
-		/* Process after */
-		$this->process_after();
-		
-		/* Set result */
-		return $container->setResponse( $this->api_result->getResponse() );
+		$this->api_result->success(["item"=>$this->new_data], "Ok");
 	}
 	
 	
 	
 	/**
-	 * Edit action
+	 * Do action delete
 	 */
-	function actionEdit(RenderContainer $container)
+	function doActionDelete()
 	{
-		$post = json_decode($container->request->getContent(), true);
-		if ($post == null)
-		{
-			throw new \Exception("Post is null");
-		}
-		
-		$data = Utils::attr($post, "item");
-		if ($data === null)
-		{
-			throw new \Exception("Field item is empty");
-		}
-		
 		/* Find item */
 		$this->findItem();
 		
-		if ($this->item == null)
-        {
-            throw new ItemNotFoundException();
-        }
-		
-		/* To database */
-		$data = $this->toDatabase($data);
-        
-		/* Update item */
-		$this->updateItem($data);
+		/* Delete from database */
+		if ($this->item)
+		{
+			$this->item->delete();
+		}
 		
 		/* From database */
-		$item = $this->fromDatabase($this->item);
+		$this->new_data = $this->fromDatabase($this->item);
 		
 		/* Set result */
-		$this->api_result->success(["item"=>$item], "Ok");
-		
-		/* Process after */
-		$this->process_after();
-		
-		/* Set result */
-		return $container->setResponse
-		(
-			$this->api_result->getResponse()
-		);
+		$this->api_result->success(["item"=>$this->new_data], "Ok");
 	}
 	
 	
 	
 	/**
-	 * Delete action
+	 * Do action
 	 */
-	function actionDelete(RenderContainer $container)
+	function doAction($name, $arguments)
 	{
-		/* Find item */
-		$this->findItem();
-		
-		if ($this->item == null)
-        {
-            throw new ItemNotFoundException();
-        }
-		
-		/* Delete item */
-		$this->deleteItem();
-		
-		/* From database */
-		$item = $this->fromDatabase($this->item);
-		
-		/* Set result */
-		$this->api_result->success(["item"=>$item], "Ok");
-		
-		/* Process after */
-		$this->process_after();
-		
-		/* Set result */
-		return $container->setResponse
-		(
-			$this->api_result->getResponse()
-		);
+		throw new \Exception("Unknown action " . $name);
 	}
+	
+	
+	
+	/**
+	 * Action
+	 */
+	public function __call($name, $arguments)
+	{
+		$container = $arguments[0];
+		
+		/* Can query */
+		$can_query = $this->canQuery();
+		if ($can_query)
+		{
+			/* Before query */
+			$this->beforeQuery();
+			
+			/* Find items */
+			$method_name = "do" . ucfirst($name);
+			if (method_exists($this, $method_name))
+			{
+				call_user_func([$this, $method_name]);
+			}
+			else
+			{
+				$this->doAction($name, $arguments);
+			}
+			
+			/* After query */
+			$this->afterQuery();
+		}
+		
+		/* Create response */
+		$this->createResponse();
+		
+		return $container;
+    }
+	
 }
