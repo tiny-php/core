@@ -43,7 +43,7 @@ class JsonField extends AbstractRule
 	{
 		if (isset($item[$this->api_name]))
 		{
-			$item[$this->api_name] = json_decode($item[$this->api_name]);
+			$item[$this->api_name] = json_decode($item[$this->api_name], true);
 		}
 		return $item;
 	}
