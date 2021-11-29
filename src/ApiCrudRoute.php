@@ -48,6 +48,13 @@ class ApiCrudRoute
 	var $old_data = null;
 	var $new_data = null;
 
+	
+	function __construct()
+	{
+		$this->rules = $this->getRules();
+	}
+	
+	
 
 	/**
 	 * Get rules
@@ -125,7 +132,6 @@ class ApiCrudRoute
 		$this->action = $container->action;
 		$this->api_result = make(ApiResult::class);
 		$this->container = $container;
-		$this->rules = $this->getRules();
 		
 		/* Init action */
 		$this->init();
@@ -167,39 +173,59 @@ class ApiCrudRoute
 		/* Search action */
 		if ($this->action == "actionSearch")
 		{
-			$max_limit = $this->getMaxLimit();
-			if ($this->container->request->query->has("start"))
-			{
-				$this->start = (int)($this->container->request->query->get("start"));
-			}
-			if ($this->container->request->query->has("limit"))
-			{
-				$this->limit = (int)($this->container->request->query->get("limit"));
-			}
-			if ($this->limit > $max_limit) $this->limit = $max_limit;
-			$this->initFilter();
+			$this->initSearch();
 		}
 		
 		/* Action create or edit */
 		if ($this->action == "actionCreate" || $this->action == "actionEdit")
 		{
-			$content_type = $this->container->request->headers->get('Content-Type');
-			if (substr($content_type, 0, strlen('application/json')) != 'application/json')
-			{
-				throw new \Exception("Content type must be application/json");
-			}
-			
-			$post = json_decode($this->container->request->getContent(), true);
-			if ($post == null)
-			{
-				throw new \Exception("Post is null");
-			}
-			
-			$this->old_data = Utils::attr($post, "item");
-			if ($this->old_data === null)
-			{
-				throw new \Exception("Field item is empty");
-			}
+			$this->initOldData();
+		}
+	}
+	
+	
+	
+	/**
+	 * Init action search
+	 */
+	public function initSearch()
+	{
+		$max_limit = $this->getMaxLimit();
+		if ($this->container->request->query->has("start"))
+		{
+			$this->start = (int)($this->container->request->query->get("start"));
+		}
+		if ($this->container->request->query->has("limit"))
+		{
+			$this->limit = (int)($this->container->request->query->get("limit"));
+		}
+		if ($this->limit > $max_limit) $this->limit = $max_limit;
+		$this->initFilter();
+	}
+	
+	
+	
+	/**
+	 * Read old data from post
+	 */
+	public function initOldData()
+	{
+		$content_type = $this->container->request->headers->get('Content-Type');
+		if (substr($content_type, 0, strlen('application/json')) != 'application/json')
+		{
+			throw new \Exception("Content type must be application/json");
+		}
+		
+		$post = json_decode($this->container->request->getContent(), true);
+		if ($post == null)
+		{
+			throw new \Exception("Post is null");
+		}
+		
+		$this->old_data = Utils::attr($post, "item");
+		if ($this->old_data === null)
+		{
+			throw new \Exception("Field item is empty");
 		}
 	}
 	
@@ -369,6 +395,16 @@ class ApiCrudRoute
 	
 	
 	/**
+	 * Returns find item id
+	 */
+	public function getFindItemId()
+	{
+		return $this->container->vars["id"];
+	}
+	
+	
+	
+	/**
 	 * Find item
 	 */
 	public function findItem()
@@ -377,7 +413,7 @@ class ApiCrudRoute
 		$instance = new $class_name();
 		
 		/* Get query */
-		$id = urldecode($this->container->vars["id"]);
+		$id = urldecode( $this->getFindItemId() );
 		$query = $class_name::query()->where($instance->getKeyName(), "=", $id);
 		
 		/* Filter query */
