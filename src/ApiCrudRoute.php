@@ -34,7 +34,7 @@ use Symfony\Component\HttpFoundation\Response;
 use TinyPHP\Exception\ItemNotFoundException;
 
 
-class ApiCrudRoute
+class ApiCrudRoute extends ApiRoute
 {
 	var $action = "";
 	var $class_name = "";
