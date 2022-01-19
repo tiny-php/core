@@ -28,28 +28,21 @@
 
 namespace TinyPHP;
 
-use Illuminate\Database\Eloquent\Model as EloquentModel;
 
-
-class Model extends EloquentModel
+class FatalError
 {
-    const CREATED_AT = 'gmtime_created';
-    const UPDATED_AT = 'gmtime_updated';
-    
-    
-    /**
-     * Update timestamps to UTC
-     */
-    public function updateTimestamps()
-    {
-		if ($this->usesTimestamps() && $this->isDirty())
+	
+	function handle_error($e, $container = null)
+	{
+		if (property_exists($e, "http_code"))
 		{
-			$time = Utils::to_date( time() );
-			if (!$this->exists)
-			{
-				$this->setCreatedAt($time);
-			}
-			$this->setUpdatedAt($time);
+			http_response_code($e->http_code);
 		}
+		else
+		{
+			http_response_code(502);
+		}
+		throw $e;
 	}
+	
 }

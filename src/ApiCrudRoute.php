@@ -51,6 +51,7 @@ class ApiCrudRoute
 	
 	function __construct()
 	{
+		parent::__construct();
 		$this->rules = $this->getRules();
 	}
 	
@@ -168,16 +169,16 @@ class ApiCrudRoute
 	/**
 	 * Init action
 	 */
-	public function init()
+	public function initAction($action)
 	{
 		/* Search action */
-		if ($this->action == "actionSearch")
+		if ($action == "actionSearch")
 		{
 			$this->initSearch();
 		}
 		
 		/* Action create or edit */
-		if ($this->action == "actionCreate" || $this->action == "actionEdit")
+		if ($action == "actionCreate" || $action == "actionEdit")
 		{
 			$this->initOldData();
 		}
@@ -467,7 +468,7 @@ class ApiCrudRoute
 	{
 		/* Find items */
 		$this->findItem();
-			
+		
 		/* From database */
 		$item = $this->fromDatabase( $this->item->getAttributes() );
 		

@@ -28,13 +28,104 @@
 
 namespace TinyPHP;
 
-use Illuminate\Database\Eloquent\Model;
+
+use FastRoute\RouteCollector;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use TinyPHP\Exception\ItemNotFoundException;
 
 
-class ModelObserver
+class Route
 {
-	public function saving(Model $model)
+	
+	public $app = null;
+	
+	
+	function __construct()
 	{
-		return true;
 	}
+	
+	
+	
+	/**
+	 * Request before
+	 */
+	function request_before(RenderContainer $container)
+	{
+		$this->action = $container->action;
+		$this->container = $container;
+		
+		/* Init action */
+		$this->init();
+		
+		/* Validate action */
+		$this->validate();
+		
+		return $container;
+	}
+	
+	
+	
+	
+	/**
+	 * Request after
+	 */
+	function request_after(RenderContainer $container)
+	{
+		/* Process after */
+		$this->after();
+		
+		return $container;
+	}
+	
+	
+	
+	/**
+	 * Init
+	 */
+	public function init()
+	{
+		$this->initAction($this->action);
+	}
+	
+	
+	
+	/**
+	 * Validate
+	 */
+	public function validate()
+	{
+		$this->validateAction($this->action);
+	}
+	
+	
+	
+	/**
+	 * After
+	 */
+	public function after()
+	{
+		$this->afterAction($this->action);
+	}
+	
+	
+	
+	/**
+	 * Init action
+	 */
+	public function initAction($action){}
+	
+	
+	
+	/**
+	 * Validate action
+	 */
+	public function validateAction($action){}
+	
+	
+	/**
+	 * After action
+	 */
+	public function afterAction($action){}
+	
 }

@@ -65,8 +65,8 @@ class App
 		/* Connect to database */
 		app("connectToDatabase");
 		
-		/* Init render */
-		app("render");
+		/* Init twig */
+		app("twig");
 	}
 	
 	
@@ -97,6 +97,7 @@ class App
 
 		$router = app(\FastRoute\RouteCollector::class);
 		$obj = new $class_name();
+		$obj->app = $this;
 		$obj->routes($router);
 		$this->routes[] = $class_name;
 	}
@@ -109,7 +110,6 @@ class App
 	function addModel($class_name)
 	{
 		$this->models[] = $class_name;
-		$class_name::observe(ModelObserver::class);
 	}
 	
 	
@@ -125,20 +125,23 @@ class App
 	
 	
 	/**
+	 * Create render container
+	 */
+	function createRenderContainer()
+	{
+		$container = make(RenderContainer::class);
+		$container->request = \Symfony\Component\HttpFoundation\Request::createFromGlobals();
+		return $container;
+	}
+	
+	
+	
+	/**
 	 * Action error
 	 */
 	function actionError($container, $e)
 	{
-		$http_code = Response::HTTP_INTERNAL_SERVER_ERROR;
-		if (property_exists($e, "http_code"))
-		{
-			$http_code = $e->http_code;
-		}
-		$container->response = make(ApiResult::class)
-			->exception($e)
-			->getResponse()
-			->setStatusCode($http_code)
-		;
+		$container->response = make(\TinyPHP\FatalError::class)->handle_error($e, $container);
 		return $container;
 	}
 	
@@ -179,10 +182,8 @@ class App
 	 */
 	function methodNotFound($routeInfo)
 	{
-		$container = make(RenderContainer::class);
-		$container->request = \Symfony\Component\HttpFoundation\Request::createFromGlobals();
-		$container = $this->actionNotFound($container);
-		if ($container->response) $container->response->send();
+		$container = $this->createRenderContainer();
+		$this->actionNotFound($container)->sendResponse();
 	}
 	
 	
@@ -192,10 +193,8 @@ class App
 	 */
 	function methodNotAllowed($routeInfo)
 	{
-		$container = make(RenderContainer::class);
-		$container->request = \Symfony\Component\HttpFoundation\Request::createFromGlobals();
-		$container = $this->actionNotAllowed($container);
-		if ($container->response) $container->response->send();
+		$container = $this->createRenderContainer();
+		$this->actionNotAllowed($container)->sendResponse();
 	}
 	
 	
@@ -206,13 +205,12 @@ class App
 	function methodFound($routeInfo)
 	{
 		$handler = $routeInfo[1];
-		$vars = $routeInfo[2];
+		$args = $routeInfo[2];
 		
-		$container = make(RenderContainer::class);
-		$container->request = \Symfony\Component\HttpFoundation\Request::createFromGlobals();
+		$container = $this->createRenderContainer();
 		$container->response = null;
 		$container->handler = $handler;
-		$container->vars = $vars;
+		$container->args = $args;
 		
 		try
 		{
@@ -225,17 +223,19 @@ class App
 				$container->action = $handler[1];
 				
 				$obj = $handler[0];
-				if (is_object($obj))
+				if (is_object($obj) && $obj instanceof Route)
 				{
+					$container->route = $obj;
 					$container = $obj->request_before($container);
-				}
-				if ($container->response == null)
-				{
-					$container = call_user_func_array($handler, [$container]);
-				}
-				if (is_object($obj))
-				{
+					if ($container->response == null)
+					{
+						call_user_func_array($handler, [$container]);
+					}
 					$container = $obj->request_after($container);
+				}
+				else
+				{
+					call_user_func_array($handler, [$container]);
 				}
 			}
 		}
@@ -244,10 +244,7 @@ class App
 			$container = $this->actionError($container, $e);
 		}
 		
-		if ($container->response != null)
-		{
-			$container->response->send();
-		}
+		$container->sendResponse();
 	}
 	
 	
@@ -312,9 +309,9 @@ class App
 		{
 			$this->console->add( new $class_name() );
 		}
-
+		
 		$this->consoleAppCreated();
-
+		
 		return $this->console;
 	}
 	

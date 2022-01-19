@@ -28,44 +28,23 @@
 
 namespace TinyPHP;
 
-use Symfony\Component\HttpFoundation\Response;
 
-
-class Core
+class FatalErrorApi extends FatalError
 {
-	static $di_container = null;
-
-
-	/**
-	 * Build container
-	 */
-	static function start($defs)
+	
+	function handle_error($e, $container = null)
 	{
-		$container_builder = new \DI\ContainerBuilder();
-		$container_builder->addDefinitions($defs);
-		static::$di_container = $container_builder->build();
-		set_exception_handler([static::class, "fatalError"]);
-	}
-
-
-	/**
-	 * Get app instance
-	 */
-	static function app()
-	{
-		return static::$di_container->get("App");
+		$http_code = 502;
+		if (property_exists($e, "http_code"))
+		{
+			$http_code = $e->http_code;
+		}
+		$response = make(ApiResult::class)
+			->exception($e)
+			->getResponse()
+			->setStatusCode($http_code)
+		;
+		return $response;
 	}
 	
-	
-	/**
-	 * Fatal error
-	 */
-	static function fatalError($e)
-	{
-		$container = make(RenderContainer::class);
-		$container->request = \Symfony\Component\HttpFoundation\Request::createFromGlobals();
-		$container = app()->actionError($container, $e);
-		if ($container->response) $container->response->send();
-	}
 }
-

@@ -28,13 +28,30 @@
 
 
 /**
+ * Build DI Container
+ */
+global $di_container;
+
+function build_di($defs)
+{
+	global $di_container;
+	$container_builder = new \DI\ContainerBuilder();
+	$container_builder->addDefinitions($defs);
+	$di_container = $container_builder->build();
+}
+
+
+
+/**
  * Get instance
  */
 function app($name = "")
 {
-	if ($name == "") return \TinyPHP\Core::$di_container->get("app");
-	return \TinyPHP\Core::$di_container->get($name);
+	global $di_container;
+	if ($name == "") return $di_container->get("app");
+	return $di_container->get($name);
 }
+
 
 
 /**
@@ -42,5 +59,28 @@ function app($name = "")
  */
 function make($name, $params = [])
 {
-	return \TinyPHP\Core::$di_container->make($name, $params);
+	global $di_container;
+	return $di_container->make($name, $params);
 }
+
+
+
+/**
+ * Enviroment
+ */
+function env($key)
+{
+	return getenv($key);
+}
+
+
+
+/**
+ * Fatal error
+ */
+function tiny_php_fatal_error($e)
+{
+	$response = make(\TinyPHP\FatalError::class)->handle_error($e);
+	$response->send();
+}
+set_exception_handler("tiny_php_fatal_error");

@@ -54,7 +54,8 @@ class Utils
 		}
 		return $res;
 	}
-
+	
+	
 
 	/**
 	 * Intersect object
@@ -66,6 +67,7 @@ class Utils
 			return object_intersect($item, $keys);
 		};
 	}
+	
 	
 	
 	/**
@@ -167,15 +169,4 @@ class Utils
 	}
 	
 	
-	/**
-	 * Get sql
-	 */
-	static function getSql($query)
-	{
-		$sql = $query->toSql();
-		$data = $query->getBindings();
-		$sql = vsprintf(str_replace("?", "'%s'", $sql), $data);
-		return $sql;
-	}
-	static function toSql($query){ return static::getSql($query); }
 }

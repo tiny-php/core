@@ -38,8 +38,72 @@ class RenderContainer
 	var $request = null;
 	var $response = null;
 	var $handler = null;
-	var $vars = null;
+	var $args = null;
 	var $context = [];
+	var $route = null;
+	
+	
+	/**
+	 * Get arg
+	 */
+	function arg($key, $value = "")
+	{
+		return isset($this->args[$key]) ? $this->args[$key] : $value;
+	}
+	
+	
+	
+	/**
+	 * Get
+	 */
+	function get($key, $value = "")
+	{
+		return $this->request->query->has($key) ?
+			$this->request->query->get("filter") : $value;
+	}
+	
+	
+	
+	/**
+	 * Post
+	 */
+	function post($key, $value = "")
+	{
+		return $this->request->query->has($key) ?
+			$this->request->query->get("filter") : $value;
+	}
+	
+	
+	
+	/**
+	 * Header
+	 */
+	function head($key, $value = "")
+	{
+		return $this->request->request->has($key) ?
+			$this->request->request->get("filter") : $value;
+	}
+	
+	
+	
+	/**
+	 * Server
+	 */
+	function server($key, $value = "")
+	{
+		return "";
+	}
+	
+	
+	
+	/**
+	 * Is post
+	 */
+	function isPost()
+	{
+		return false;
+	}
+	
 	
 	
 	/**
@@ -56,9 +120,12 @@ class RenderContainer
 	/**
 	 * Set context
 	 */
-	function setContext($key, $value)
+	function setContext($arr)
 	{
-		$this->context[$key] = $value;
+		foreach ($arr as $key => $value)
+		{
+			$this->context[$key] = $value;
+		}
 	}
 	
 	
@@ -79,11 +146,21 @@ class RenderContainer
 	
 	
 	/**
+	 * Send response
+	 */
+	function sendResponse()
+	{
+		if ($this->response) $this->response->send();
+	}
+	
+	
+	
+	/**
 	 * Render template
 	 */
 	function render($template)
 	{
-		$twig = app("render");
+		$twig = app("twig");
 		$content = $twig->render($template, $this->context);
 		$this->response = new Response
 		(
