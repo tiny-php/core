@@ -59,7 +59,7 @@ class RenderContainer
 	function get($key, $value = "")
 	{
 		return $this->request->query->has($key) ?
-			$this->request->query->get("filter") : $value;
+			$this->request->query->get($key) : $value;
 	}
 	
 	
@@ -69,8 +69,8 @@ class RenderContainer
 	 */
 	function post($key, $value = "")
 	{
-		return $this->request->query->has($key) ?
-			$this->request->query->get("filter") : $value;
+		return $this->request->request->has($key) ?
+			$this->request->request->get($key) : $value;
 	}
 	
 	
@@ -80,8 +80,8 @@ class RenderContainer
 	 */
 	function head($key, $value = "")
 	{
-		return $this->request->request->has($key) ?
-			$this->request->request->get("filter") : $value;
+		return $this->request->headers->has($key) ?
+			$this->request->headers->get($key) : $value;
 	}
 	
 	
@@ -101,7 +101,7 @@ class RenderContainer
 	 */
 	function isPost()
 	{
-		return false;
+		return $this->request->isMethod('POST');
 	}
 	
 	
