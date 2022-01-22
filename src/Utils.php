@@ -104,6 +104,20 @@ class Utils
 	
 	
 	/**
+	 * List to array
+	 */
+	static function listToArray($items)
+	{
+		return array_map
+		(
+			function ($model){ return ($model instanceof \TinyORM\Model) ? $model->toArray() : $model; },
+			$items
+		);
+	}
+	
+	
+	
+	/**
 	 * To datetime
 	 */
 	static function to_datetime($date, $tz = 'UTC', $format = 'Y-m-d H:i:s')
@@ -137,6 +151,16 @@ class Utils
 		$dt->setTimestamp($timestamp);
 		$dt->setTimezone($tz);
 		return $dt->format($format);
+	}
+	
+	
+	
+	/**
+	 * To datetime
+	 */
+	static function dbtime($time, $tz = 'UTC', $format = 'Y-m-d H:i:s')
+	{
+		return static::to_date($time, $tz, $format);
 	}
 	
 	
