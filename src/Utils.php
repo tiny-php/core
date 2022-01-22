@@ -38,10 +38,6 @@ class Utils
 	function object_intersect($item, $keys)
 	{
 		$res = [];
-		if ($item instanceof \Illuminate\Database\Eloquent\Model)
-		{
-			$item = $item->getAttributes();
-		}
 		if (gettype($item) == 'array')
 		{
 			foreach ($item as $key => $val)

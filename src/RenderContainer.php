@@ -133,6 +133,16 @@ class RenderContainer
 	
 	
 	/**
+	 * Add context
+	 */
+	function addContext($key, $value)
+	{
+		$this->context[$key] = $value;
+	}
+	
+	
+	
+	/**
 	 * Set content
 	 */
 	function setContent($content)
