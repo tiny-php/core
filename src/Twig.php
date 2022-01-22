@@ -71,7 +71,7 @@ class Twig
 		/* Enable cache */
 		if ($twig_cache)
 		{
-			$twig_opt['cache'] = ROOT_PATH . '/var/cache/twig';
+			$twig_opt['cache'] = ROOT_PATH . '/var/twig';
 			$twig_opt['auto_reload'] = true;
 		}
 		

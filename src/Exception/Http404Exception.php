@@ -31,13 +31,13 @@ namespace TinyPHP\Exception;
 use Symfony\Component\HttpFoundation\Response;
 
 
-class NotFoundException extends \Exception
+class Http404Exception extends \Exception
 {
     var $http_code;
     public function __construct($message = 'Item', Throwable $previous = null)
     {
         $this->message = $message . " not found";
-        $this->code = \Helper\App::ERROR_HTTP_NOT_FOUND;
+        $this->code = -404;
         $this->http_code = Response::HTTP_NOT_FOUND;
     }
 }

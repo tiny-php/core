@@ -41,6 +41,7 @@ class RenderContainer
 	var $args = null;
 	var $context = [];
 	var $route = null;
+	var $is_api = false;
 	
 	
 	/**
@@ -91,7 +92,8 @@ class RenderContainer
 	 */
 	function server($key, $value = "")
 	{
-		return "";
+		return $this->request->server->has($key) ?
+			$this->request->server->get($key) : $value;
 	}
 	
 	
@@ -158,10 +160,12 @@ class RenderContainer
 	/**
 	 * Render template
 	 */
-	function render($template)
+	function render($template, $data = null)
 	{
+		$context = $this->context;
+		if ($data != null) $context = array_merge($context, $data);
 		$twig = app("twig");
-		$content = $twig->render($template, $this->context);
+		$content = $twig->render($template, $context);
 		$this->response = new Response
 		(
 			$content,

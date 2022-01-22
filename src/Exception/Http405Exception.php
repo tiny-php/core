@@ -31,13 +31,13 @@ namespace TinyPHP\Exception;
 use Symfony\Component\HttpFoundation\Response;
 
 
-class HttpMethodNotAllowedException extends \Exception
+class Http405Exception extends \Exception
 {
     var $http_code;
     public function __construct(Throwable $previous = null)
     {
         $this->message = "Method are not allowed";
-        $this->code = \TinyPHP\App::ERROR_HTTP_METHOD_NOT_ALLOWED;
+        $this->code = -405;
         $this->http_code = Response::HTTP_METHOD_NOT_ALLOWED;
     }
 }

@@ -40,22 +40,7 @@ class App
 	var $routes = [];
 	var $models = [];
 	var $commands = [];
-
-	const ERROR_OK = 1;
-	const ERROR_ITEM_NOT_FOUND = -2;
-	const ERROR_HTTP_NOT_FOUND = -404;
-	const ERROR_HTTP_METHOD_NOT_ALLOWED = -405;
-
-
-	/**
-	 * Get instance
-	 */
-	function get($name)
-	{
-		return Core::$di_container->get($name);
-	}
-
-
+	
 
 	/**
 	 * Init app
@@ -148,14 +133,12 @@ class App
 	
 	
 	/**
-	 * Action error
+	 * 404 error
 	 */
 	function actionNotFound($container)
 	{
-		$container->response = make(ApiResult::class)
-			->error( "HTTP 404 Not Found", -1 )
-			->getResponse()
-			->setStatusCode(Response::HTTP_NOT_FOUND)
+		$container->response = make(\TinyPHP\FatalError::class)
+			->handle_error(new \TinyPHP\Exception\Http404Exception("Page"), $container)
 		;
 		return $container;
 	}
@@ -167,10 +150,8 @@ class App
 	 */
 	function actionNotAllowed($container)
 	{
-		$container->response = make(ApiResult::class)
-			->error( "HTTP 405 Method Not Allowed", -1 )
-			->getResponse()
-			->setStatusCode(Response::HTTP_METHOD_NOT_ALLOWED)
+		$container->response = make(\TinyPHP\FatalError::class)
+			->handle_error(new \TinyPHP\Exception\Http405Exception(), $container)
 		;
 		return $container;
 	}
@@ -200,6 +181,14 @@ class App
 	
 	
 	/**
+	 * Request before, after
+	 */
+	function request_before($container){}
+	function request_after($container){}
+	
+	
+	
+	/**
 	 * Method found
 	 */
 	function methodFound($routeInfo)
@@ -211,6 +200,9 @@ class App
 		$container->response = null;
 		$container->handler = $handler;
 		$container->args = $args;
+		
+		/* Request before */
+		$this->request_before($container);
 		
 		try
 		{
@@ -243,6 +235,9 @@ class App
 		{
 			$container = $this->actionError($container, $e);
 		}
+		
+		/* Request after */
+		$this->request_after($container);
 		
 		$container->sendResponse();
 	}
@@ -316,41 +311,4 @@ class App
 	}
 	
 	
-	
-	/**
-	 * Connect to database
-	 */
-	static function connectToDatabase()
-	{
-		$capsule = new Capsule;
-		
-		/*
-		$capsule->addConnection
-		([
-			'driver'    => 'mysql',
-			'host'      => env("MYSQL_HOST"),
-			'port'      => env("MYSQL_PORT"),
-			'database'  => env("MYSQL_DATABASE"),
-			'username'  => env("MYSQL_USERNAME"),
-			'password'  => env("MYSQL_PASSWORD"),
-			'charset'   => 'utf8',
-			'collation' => 'utf8_unicode_ci',
-			'prefix'    => '',
-		]);
-		*/
-		
-		// Set event dispatcher
-		$capsule->setEventDispatcher( app(\Illuminate\Events\Dispatcher::class) );
-
-		// Set the cache manager instance used by connections... (optional)
-		//$capsule->setCacheManager();
-
-		// Make this Capsule instance available globally via static methods... (optional)
-		$capsule->setAsGlobal();
-
-		// Setup the Eloquent ORM... (optional; unless you've used setEventDispatcher())
-		$capsule->bootEloquent();
-		
-		return $capsule;
-	}
 }
