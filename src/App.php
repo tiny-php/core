@@ -37,21 +37,197 @@ use Symfony\Component\HttpFoundation\Response;
 
 class App
 {
+	var $chains = [];
 	var $routes = [];
 	var $models = [];
 	var $commands = [];
+	var $modules = [];
+	var $di_container = null;
 	
+	
+	/**
+	 * Return instance
+	 */
+	function get($name)
+	{
+		return $this->di_container->get($name);
+	}
+	
+	
+	
+	/**
+	 * Make instance
+	 */
+	function make($name, $params = [])
+	{
+		return $this->di_container->make($name, $params);
+	}
+	
+	
+	
+	/**
+	 * Returns enviroment variable
+	 */
+	function env($key)
+	{
+		return getenv($key);
+	}
+	
+	
+	
+	/**
+	 * Add chain
+	 */
+	function add_chain($chain_name, $class_name, $method_name, $priority = 0)
+	{
+		if (!isset($this->chains[$chain_name])) $this->chains[$chain_name] = [];
+		if (!isset($this->chains[$chain_name][$priority]))
+			$this->chains[$chain_name][$priority] = [];
+		$this->chains[$chain_name][$priority] = [ $class_name, $method_name ];
+	}
+	
+	
+	
+	/**
+	 * Call chain
+	 */
+	function call_chain($chain_name, $params = [])
+	{
+		$res = new ChainResult();
+		foreach ($params as $key => $value)
+		{
+			$res[$key] = $value;
+		}
+		
+		if (isset($this->chains[$chain_name]))
+		{
+			$chain = $this->chains[$chain_name];
+			$chain_keys = array_keys($chain);
+			sort($chain_keys);
+			foreach ($chain_keys as $key)
+			{
+				$list_callbacks = $chain[$key];
+				foreach ($list_callbacks as $callback)
+				{
+					call_user_func_array($callback, [$res]);
+				}
+			}
+		}
+		
+		return $res;
+	}
+	
+	
+	
+	/**
+	 * Get DI container
+	 */
+	function get_di_defs()
+	{
+		return [
+			"twig" => DI\create(\TinyPHP\Twig::class),
+			
+			/* App settings */
+			"settings" => function()
+			{
+				return [
+				];
+			},
 
+			/* Other classes */
+			\FastRoute\RouteParser::class => DI\create(\FastRoute\RouteParser\Std::class),
+			\FastRoute\DataGenerator::class => DI\create(
+				\FastRoute\DataGenerator\GroupCountBased::class
+			),
+			\FastRoute\RouteCollector::class => DI\autowire(\FastRoute\RouteCollector::class),
+			\FastRoute\Dispatcher::class =>
+				function (\Psr\Container\ContainerInterface $c)
+				{
+					$router = $c->get(\FastRoute\RouteCollector::class);
+					return new \FastRoute\Dispatcher\GroupCountBased( $router->getData() );
+				},
+
+			\TinyPHP\ApiResult::class => DI\create(\TinyPHP\ApiResult::class),
+			\TinyPHP\RenderContainer::class => DI\create(\TinyPHP\RenderContainer::class),
+			\TinyPHP\FatalError::class => DI\create(\TinyPHP\FatalError::class),
+		];
+	}
+	
+	
+	
+	/**
+	 * Build DI container
+	 */
+	function build_di_container()
+	{
+		$defs = $this->get_di_defs();
+		
+		/* Extend di container defs */
+		$res = chain("init_di_defs", ["defs"=>$defs]);
+		$defs = $res->defs;
+		
+		/* Create DI container */
+		$container_builder = new \DI\ContainerBuilder();
+		$container_builder->addDefinitions($defs);
+		$this->di_container = $container_builder->build();
+	}
+	
+	
+	
 	/**
 	 * Init app
 	 */
 	function init()
 	{
-		/* Connect to database */
-		app("connectToDatabase");
+		$this->add_modules();
 		
-		/* Init twig */
-		app("twig");
+		/* Register modules hooks */
+		foreach ($this->modules as $module_class_name)
+		{
+			call_user_func([ $module_class_name, "register_hooks" ]);
+		}
+		
+		/* Register hooks */
+		$this->add_chain("init_routes", $this, "init_routes");
+		$this->register_hooks();
+		$this->call_chain("register_hooks");
+		
+		/* Build DI container */
+		$this->build_di_container();
+		
+		/* Init routes */
+		$this->call_chain("init_routes");
+		
+		/* Init app */
+		$this->call_chain("init_app");
+	}
+	
+	
+	
+	/**
+	 * Add modules
+	 */
+	function add_modules()
+	{
+	}
+	
+	
+	
+	/**
+	 * Register hooks
+	 */
+	function register_hooks()
+	{
+	}
+	
+	
+	
+	/**
+	 * Add module
+	 */
+	function addModule($module_class_name)
+	{
+		$this->modules[] = $module_class_name;
 	}
 	
 	

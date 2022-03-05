@@ -26,18 +26,22 @@
  *  SOFTWARE.
  */
 
+ define ("CHAIN_BEFORE", -500);
+ define ("CHAIN_AFTER", 500);
+ define ("CHAIN_LAST", 1000);
+ 
 
 /**
- * Build DI Container
+ * Create app instance
  */
-global $di_container;
-
-function build_di($defs)
+function create_app_instance()
 {
-	global $di_container;
-	$container_builder = new \DI\ContainerBuilder();
-	$container_builder->addDefinitions($defs);
-	$di_container = $container_builder->build();
+	global $app;
+	if ($app == null)
+	{
+		$app = new App\Instance();
+	}
+	return $app;
 }
 
 
@@ -47,11 +51,32 @@ function build_di($defs)
  */
 function app($name = "")
 {
-	global $di_container;
-	if ($name == "") return $di_container->get("app");
-	return $di_container->get($name);
+	global $app;
+	if ($name == "") return $app;
+	return $app->get($name);
 }
 
+
+
+/**
+ * Add chain
+ */
+function add_chain($name = "", $params = [])
+{
+	global $app;
+	return $app->add_chain($name, $params);
+}
+
+
+
+/**
+ * Call chain
+ */
+function call_chain($name = "", $params = [])
+{
+	global $app;
+	return $app->call_chain($name, $params);
+}
 
 
 /**
@@ -59,8 +84,8 @@ function app($name = "")
  */
 function make($name, $params = [])
 {
-	global $di_container;
-	return $di_container->make($name, $params);
+	global $app;
+	return $app->make($name, $params);
 }
 
 
@@ -70,7 +95,8 @@ function make($name, $params = [])
  */
 function env($key)
 {
-	return getenv($key);
+	global $app;
+	return $app->env($key);
 }
 
 

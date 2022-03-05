@@ -34,14 +34,33 @@ class FatalError
 	
 	function handle_error($e, $container = null)
 	{
+		$http_code = 502;
 		if (property_exists($e, "http_code"))
 		{
-			http_response_code($e->http_code);
+			$http_code = $e->http_code;
 		}
-		else
+		
+		$res = call_chain("fatal_error", [
+			"e"=>$e,
+			"container"=>$container,
+			"response"=>null
+		]);
+		if ($res->response)
 		{
-			http_response_code(502);
+			return $res->response;
 		}
+		
+		if (defined("DOING_API"))
+		{
+			$response = make(ApiResult::class)
+				->exception($e)
+				->getResponse()
+				->setStatusCode($http_code)
+			;
+			return $response;
+		}
+		
+		http_response_code($http_code);
 		throw $e;
 	}
 	
