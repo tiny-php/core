@@ -38,10 +38,6 @@ class Utils
 	function object_intersect($item, $keys)
 	{
 		$res = [];
-		if ($item instanceof \Illuminate\Database\Eloquent\Model)
-		{
-			$item = $item->getAttributes();
-		}
 		if (gettype($item) == 'array')
 		{
 			foreach ($item as $key => $val)
@@ -54,7 +50,8 @@ class Utils
 		}
 		return $res;
 	}
-
+	
+	
 
 	/**
 	 * Intersect object
@@ -66,6 +63,7 @@ class Utils
 			return object_intersect($item, $keys);
 		};
 	}
+	
 	
 	
 	/**
@@ -101,6 +99,20 @@ class Utils
 		{
 			return call_user_func_array([$obj, $method_name], func_get_args());
 		};
+	}
+	
+	
+	
+	/**
+	 * List to array
+	 */
+	static function listToArray($items)
+	{
+		return array_map
+		(
+			function ($model){ return ($model instanceof \TinyORM\Model) ? $model->toArray() : $model; },
+			$items
+		);
 	}
 	
 	
@@ -144,6 +156,16 @@ class Utils
 	
 	
 	/**
+	 * To datetime
+	 */
+	static function dbtime($time, $tz = 'UTC', $format = 'Y-m-d H:i:s')
+	{
+		return static::to_date($time, $tz, $format);
+	}
+	
+	
+	
+	/**
 	 * Attr
 	 */
 	static function attr($obj, $keys, $default_value = null)
@@ -167,15 +189,4 @@ class Utils
 	}
 	
 	
-	/**
-	 * Get sql
-	 */
-	static function getSql($query)
-	{
-		$sql = $query->toSql();
-		$data = $query->getBindings();
-		$sql = vsprintf(str_replace("?", "'%s'", $sql), $data);
-		return $sql;
-	}
-	static function toSql($query){ return static::getSql($query); }
 }

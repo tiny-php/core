@@ -26,18 +26,25 @@
  *  SOFTWARE.
  */
 
-namespace TinyPHP\Exception;
-
-use Symfony\Component\HttpFoundation\Response;
+namespace TinyPHP;
 
 
-class HttpMethodNotAllowedException extends \Exception
+class FatalErrorApi extends FatalError
 {
-    var $http_code;
-    public function __construct(Throwable $previous = null)
-    {
-        $this->message = "Method are not allowed";
-        $this->code = \TinyPHP\App::ERROR_HTTP_METHOD_NOT_ALLOWED;
-        $this->http_code = Response::HTTP_METHOD_NOT_ALLOWED;
-    }
+	
+	function handle_error($e, $container = null)
+	{
+		$http_code = 502;
+		if (property_exists($e, "http_code"))
+		{
+			$http_code = $e->http_code;
+		}
+		$response = make(ApiResult::class)
+			->exception($e)
+			->getResponse()
+			->setStatusCode($http_code)
+		;
+		return $response;
+	}
+	
 }

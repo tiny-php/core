@@ -40,22 +40,7 @@ class App
 	var $routes = [];
 	var $models = [];
 	var $commands = [];
-
-	const ERROR_OK = 1;
-	const ERROR_ITEM_NOT_FOUND = -2;
-	const ERROR_HTTP_NOT_FOUND = -404;
-	const ERROR_HTTP_METHOD_NOT_ALLOWED = -405;
-
-
-	/**
-	 * Get instance
-	 */
-	function get($name)
-	{
-		return Core::$di_container->get($name);
-	}
-
-
+	
 
 	/**
 	 * Init app
@@ -65,8 +50,8 @@ class App
 		/* Connect to database */
 		app("connectToDatabase");
 		
-		/* Init render */
-		app("render");
+		/* Init twig */
+		app("twig");
 	}
 	
 	
@@ -97,6 +82,7 @@ class App
 
 		$router = app(\FastRoute\RouteCollector::class);
 		$obj = new $class_name();
+		$obj->app = $this;
 		$obj->routes($router);
 		$this->routes[] = $class_name;
 	}
@@ -109,7 +95,6 @@ class App
 	function addModel($class_name)
 	{
 		$this->models[] = $class_name;
-		$class_name::observe(ModelObserver::class);
 	}
 	
 	
@@ -125,20 +110,12 @@ class App
 	
 	
 	/**
-	 * Action error
+	 * Create render container
 	 */
-	function actionError($container, $e)
+	function createRenderContainer()
 	{
-		$http_code = Response::HTTP_INTERNAL_SERVER_ERROR;
-		if (property_exists($e, "http_code"))
-		{
-			$http_code = $e->http_code;
-		}
-		$container->response = make(ApiResult::class)
-			->exception($e)
-			->getResponse()
-			->setStatusCode($http_code)
-		;
+		$container = make(RenderContainer::class);
+		$container->request = \Symfony\Component\HttpFoundation\Request::createFromGlobals();
 		return $container;
 	}
 	
@@ -147,12 +124,21 @@ class App
 	/**
 	 * Action error
 	 */
+	function actionError($container, $e)
+	{
+		$container->response = make(\TinyPHP\FatalError::class)->handle_error($e, $container);
+		return $container;
+	}
+	
+	
+	
+	/**
+	 * 404 error
+	 */
 	function actionNotFound($container)
 	{
-		$container->response = make(ApiResult::class)
-			->error( "HTTP 404 Not Found", -1 )
-			->getResponse()
-			->setStatusCode(Response::HTTP_NOT_FOUND)
+		$container->response = make(\TinyPHP\FatalError::class)
+			->handle_error(new \TinyPHP\Exception\Http404Exception("Page"), $container)
 		;
 		return $container;
 	}
@@ -164,10 +150,8 @@ class App
 	 */
 	function actionNotAllowed($container)
 	{
-		$container->response = make(ApiResult::class)
-			->error( "HTTP 405 Method Not Allowed", -1 )
-			->getResponse()
-			->setStatusCode(Response::HTTP_METHOD_NOT_ALLOWED)
+		$container->response = make(\TinyPHP\FatalError::class)
+			->handle_error(new \TinyPHP\Exception\Http405Exception(), $container)
 		;
 		return $container;
 	}
@@ -179,10 +163,8 @@ class App
 	 */
 	function methodNotFound($routeInfo)
 	{
-		$container = make(RenderContainer::class);
-		$container->request = \Symfony\Component\HttpFoundation\Request::createFromGlobals();
-		$container = $this->actionNotFound($container);
-		if ($container->response) $container->response->send();
+		$container = $this->createRenderContainer();
+		$this->actionNotFound($container)->sendResponse();
 	}
 	
 	
@@ -192,11 +174,17 @@ class App
 	 */
 	function methodNotAllowed($routeInfo)
 	{
-		$container = make(RenderContainer::class);
-		$container->request = \Symfony\Component\HttpFoundation\Request::createFromGlobals();
-		$container = $this->actionNotAllowed($container);
-		if ($container->response) $container->response->send();
+		$container = $this->createRenderContainer();
+		$this->actionNotAllowed($container)->sendResponse();
 	}
+	
+	
+	
+	/**
+	 * Request before, after
+	 */
+	function request_before($container){}
+	function request_after($container){}
 	
 	
 	
@@ -206,13 +194,15 @@ class App
 	function methodFound($routeInfo)
 	{
 		$handler = $routeInfo[1];
-		$vars = $routeInfo[2];
+		$args = $routeInfo[2];
 		
-		$container = make(RenderContainer::class);
-		$container->request = \Symfony\Component\HttpFoundation\Request::createFromGlobals();
+		$container = $this->createRenderContainer();
 		$container->response = null;
 		$container->handler = $handler;
-		$container->vars = $vars;
+		$container->args = $args;
+		
+		/* Request before */
+		$this->request_before($container);
 		
 		try
 		{
@@ -225,17 +215,19 @@ class App
 				$container->action = $handler[1];
 				
 				$obj = $handler[0];
-				if (is_object($obj))
+				if (is_object($obj) && $obj instanceof Route)
 				{
+					$container->route = $obj;
 					$container = $obj->request_before($container);
-				}
-				if ($container->response == null)
-				{
-					$container = call_user_func_array($handler, [$container]);
-				}
-				if (is_object($obj))
-				{
+					if ($container->response == null)
+					{
+						call_user_func_array($handler, [$container]);
+					}
 					$container = $obj->request_after($container);
+				}
+				else
+				{
+					call_user_func_array($handler, [$container]);
 				}
 			}
 		}
@@ -244,10 +236,10 @@ class App
 			$container = $this->actionError($container, $e);
 		}
 		
-		if ($container->response != null)
-		{
-			$container->response->send();
-		}
+		/* Request after */
+		$this->request_after($container);
+		
+		$container->sendResponse();
 	}
 	
 	
@@ -312,48 +304,11 @@ class App
 		{
 			$this->console->add( new $class_name() );
 		}
-
+		
 		$this->consoleAppCreated();
-
+		
 		return $this->console;
 	}
 	
 	
-	
-	/**
-	 * Connect to database
-	 */
-	static function connectToDatabase()
-	{
-		$capsule = new Capsule;
-		
-		/*
-		$capsule->addConnection
-		([
-			'driver'    => 'mysql',
-			'host'      => env("MYSQL_HOST"),
-			'port'      => env("MYSQL_PORT"),
-			'database'  => env("MYSQL_DATABASE"),
-			'username'  => env("MYSQL_USERNAME"),
-			'password'  => env("MYSQL_PASSWORD"),
-			'charset'   => 'utf8',
-			'collation' => 'utf8_unicode_ci',
-			'prefix'    => '',
-		]);
-		*/
-		
-		// Set event dispatcher
-		$capsule->setEventDispatcher( app(\Illuminate\Events\Dispatcher::class) );
-
-		// Set the cache manager instance used by connections... (optional)
-		//$capsule->setCacheManager();
-
-		// Make this Capsule instance available globally via static methods... (optional)
-		$capsule->setAsGlobal();
-
-		// Setup the Eloquent ORM... (optional; unless you've used setEventDispatcher())
-		$capsule->bootEloquent();
-		
-		return $capsule;
-	}
 }

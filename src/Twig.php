@@ -71,7 +71,7 @@ class Twig
 		/* Enable cache */
 		if ($twig_cache)
 		{
-			$twig_opt['cache'] = ROOT_PATH . '/var/cache/twig';
+			$twig_opt['cache'] = ROOT_PATH . '/var/twig';
 			$twig_opt['auto_reload'] = true;
 		}
 		
@@ -88,6 +88,32 @@ class Twig
 		
 		/* Set strategy */
 		$this->twig->getExtension(\Twig\Extension\EscaperExtension::class)->setDefaultStrategy('html');
+		
+		/* Undefined functions */
+		$this->twig->registerUndefinedFunctionCallback(function ($name) {
+			if (!function_exists($name))
+			{
+				return false;
+			}
+			return new \Twig\TwigFunction($name, $name);
+		});
+		
+		/* Undefined filter */
+		$this->twig->registerUndefinedFilterCallback(function ($name) {
+			if (!function_exists($name))
+			{
+				return false;
+			}
+			return new \Twig\TwigFunction($name, $name);
+		});
+		
+		/* Custom function */
+		$this->twig->addFunction( new \Twig\TwigFunction( 'function', function($name)
+		{
+			$args = func_get_args();
+			array_shift($args);
+			return call_user_func_array($name, $args);
+		} ) );
 		
 		return $this->twig;
 	}

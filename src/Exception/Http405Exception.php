@@ -26,46 +26,18 @@
  *  SOFTWARE.
  */
 
-namespace TinyPHP;
+namespace TinyPHP\Exception;
 
 use Symfony\Component\HttpFoundation\Response;
 
 
-class Core
+class Http405Exception extends \Exception
 {
-	static $di_container = null;
-
-
-	/**
-	 * Build container
-	 */
-	static function start($defs)
-	{
-		$container_builder = new \DI\ContainerBuilder();
-		$container_builder->addDefinitions($defs);
-		static::$di_container = $container_builder->build();
-		set_exception_handler([static::class, "fatalError"]);
-	}
-
-
-	/**
-	 * Get app instance
-	 */
-	static function app()
-	{
-		return static::$di_container->get("App");
-	}
-	
-	
-	/**
-	 * Fatal error
-	 */
-	static function fatalError($e)
-	{
-		$container = make(RenderContainer::class);
-		$container->request = \Symfony\Component\HttpFoundation\Request::createFromGlobals();
-		$container = app()->actionError($container, $e);
-		if ($container->response) $container->response->send();
-	}
+    var $http_code;
+    public function __construct(Throwable $previous = null)
+    {
+        $this->message = "Method are not allowed";
+        $this->code = -405;
+        $this->http_code = Response::HTTP_METHOD_NOT_ALLOWED;
+    }
 }
-

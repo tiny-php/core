@@ -38,8 +38,74 @@ class RenderContainer
 	var $request = null;
 	var $response = null;
 	var $handler = null;
-	var $vars = null;
+	var $args = null;
 	var $context = [];
+	var $route = null;
+	var $is_api = false;
+	
+	
+	/**
+	 * Get arg
+	 */
+	function arg($key, $value = "")
+	{
+		return isset($this->args[$key]) ? $this->args[$key] : $value;
+	}
+	
+	
+	
+	/**
+	 * Get
+	 */
+	function get($key, $value = "")
+	{
+		return $this->request->query->has($key) ?
+			$this->request->query->get($key) : $value;
+	}
+	
+	
+	
+	/**
+	 * Post
+	 */
+	function post($key, $value = "")
+	{
+		return $this->request->request->has($key) ?
+			$this->request->request->get($key) : $value;
+	}
+	
+	
+	
+	/**
+	 * Header
+	 */
+	function head($key, $value = "")
+	{
+		return $this->request->headers->has($key) ?
+			$this->request->headers->get($key) : $value;
+	}
+	
+	
+	
+	/**
+	 * Server
+	 */
+	function server($key, $value = "")
+	{
+		return $this->request->server->has($key) ?
+			$this->request->server->get($key) : $value;
+	}
+	
+	
+	
+	/**
+	 * Is post
+	 */
+	function isPost()
+	{
+		return $this->request->isMethod('POST');
+	}
+	
 	
 	
 	/**
@@ -56,7 +122,20 @@ class RenderContainer
 	/**
 	 * Set context
 	 */
-	function setContext($key, $value)
+	function setContext($arr)
+	{
+		foreach ($arr as $key => $value)
+		{
+			$this->context[$key] = $value;
+		}
+	}
+	
+	
+	
+	/**
+	 * Add context
+	 */
+	function addContext($key, $value)
 	{
 		$this->context[$key] = $value;
 	}
@@ -79,12 +158,24 @@ class RenderContainer
 	
 	
 	/**
+	 * Send response
+	 */
+	function sendResponse()
+	{
+		if ($this->response) $this->response->send();
+	}
+	
+	
+	
+	/**
 	 * Render template
 	 */
-	function render($template)
+	function render($template, $data = null)
 	{
-		$twig = app("render");
-		$content = $twig->render($template, $this->context);
+		$context = $this->context;
+		if ($data != null) $context = array_merge($context, $data);
+		$twig = app("twig");
+		$content = $twig->render($template, $context);
 		$this->response = new Response
 		(
 			$content,
