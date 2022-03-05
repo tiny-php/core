@@ -292,6 +292,10 @@ class App
 	{
 		$container = make(RenderContainer::class);
 		$container->request = \Symfony\Component\HttpFoundation\Request::createFromGlobals();
+		$res = $this->call_chain("create_render_container", [
+			"container" => $container,
+		]);
+		$container = $res->container;
 		return $container;
 	}
 	
@@ -316,6 +320,10 @@ class App
 		$container->response = make(\TinyPHP\FatalError::class)
 			->handle_error(new \TinyPHP\Exception\Http404Exception("Page"), $container)
 		;
+		$res = $this->call_chain("method_not_found", [
+			"container" => $container,
+		]);
+		$container = $res->container;
 		return $container;
 	}
 	
@@ -329,6 +337,10 @@ class App
 		$container->response = make(\TinyPHP\FatalError::class)
 			->handle_error(new \TinyPHP\Exception\Http405Exception(), $container)
 		;
+		$res = $this->call_chain("method_not_allowed", [
+			"container" => $container,
+		]);
+		$container = $res->container;
 		return $container;
 	}
 	
@@ -357,14 +369,6 @@ class App
 	
 	
 	/**
-	 * Request before, after
-	 */
-	function request_before($container){}
-	function request_after($container){}
-	
-	
-	
-	/**
 	 * Method found
 	 */
 	function methodFound($routeInfo)
@@ -378,7 +382,9 @@ class App
 		$container->args = $args;
 		
 		/* Request before */
-		$this->request_before($container);
+		$this->call_chain("request_before", [
+			"container" => $container,
+		]);
 		
 		try
 		{
@@ -413,7 +419,9 @@ class App
 		}
 		
 		/* Request after */
-		$this->request_after($container);
+		$this->call_chain("request_after", [
+			"container" => $container,
+		]);
 		
 		$container->sendResponse();
 	}
