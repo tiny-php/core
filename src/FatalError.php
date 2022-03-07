@@ -50,7 +50,7 @@ class FatalError
 			return $res->response;
 		}
 		
-		if (defined("DOING_API"))
+		if ($container->isApi())
 		{
 			$response = make(ApiResult::class)
 				->exception($e)

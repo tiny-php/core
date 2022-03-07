@@ -75,6 +75,9 @@ class Twig
 			$twig_opt['auto_reload'] = true;
 		}
 		
+		$res = call_chain("twig_opt", ["twig_opt"=>$twig_opt]);
+		$twig_opt = $res->twig_opt;
+		
 		/* Create twig loader */
 		$twig_loader = new \Twig\Loader\FilesystemLoader();
 		$twig_loader->addPath(ROOT_PATH . '/app/Templates', 'app');
@@ -87,7 +90,8 @@ class Twig
 		);
 		
 		/* Set strategy */
-		$this->twig->getExtension(\Twig\Extension\EscaperExtension::class)->setDefaultStrategy('html');
+		$this->twig->getExtension(\Twig\Extension\EscaperExtension::class)
+			->setDefaultStrategy('html');
 		
 		/* Undefined functions */
 		$this->twig->registerUndefinedFunctionCallback(function ($name) {
@@ -114,6 +118,8 @@ class Twig
 			array_shift($args);
 			return call_user_func_array($name, $args);
 		} ) );
+		
+		call_chain("twig", ["twig"=>$this->twig, "obj"=>$this]);
 		
 		return $this->twig;
 	}

@@ -39,8 +39,9 @@ class RenderContainer
 	var $response = null;
 	var $handler = null;
 	var $args = null;
-	var $context = [];
+	var $context = [ "global" => [], ];
 	var $route = null;
+	var $route_info = null;
 	var $is_api = false;
 	
 	
@@ -49,7 +50,9 @@ class RenderContainer
 	 */
 	function arg($key, $value = "")
 	{
-		return isset($this->args[$key]) ? $this->args[$key] : $value;
+		return ($this->args != null && isset($this->args[$key])) ?
+			$this->args[$key] : $value
+		;
 	}
 	
 	
@@ -94,6 +97,16 @@ class RenderContainer
 	{
 		return $this->request->server->has($key) ?
 			$this->request->server->get($key) : $value;
+	}
+	
+	
+	
+	/**
+	 * Is api
+	 */
+	function isApi()
+	{
+		return $this->is_api;
 	}
 	
 	

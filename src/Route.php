@@ -29,7 +29,6 @@
 namespace TinyPHP;
 
 
-use FastRoute\RouteCollector;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use TinyPHP\Exception\ItemNotFoundException;
@@ -38,9 +37,24 @@ use TinyPHP\Exception\ItemNotFoundException;
 class Route
 {
 	
-	public $app = null;
+	
+	/**
+	 * Declare routes
+	 */
+	function routes(RouteContainer $route_container)
+	{
+		$route_container->addRoute([
+			"url" => "/api/test/",
+			"name" => "site:test",
+			"method" => [$this, "actionTest"],
+		]);
+	}
 	
 	
+	
+	/**
+	 * Constructor
+	 */
 	function __construct()
 	{
 	}
@@ -52,14 +66,13 @@ class Route
 	 */
 	function request_before(RenderContainer $container)
 	{
-		$this->action = $container->action;
 		$this->container = $container;
 		
 		/* Init action */
-		$this->init();
+		$this->init($container->action);
 		
 		/* Validate action */
-		$this->validate();
+		$this->validate($container->action);
 		
 		return $container;
 	}
@@ -73,7 +86,7 @@ class Route
 	function request_after(RenderContainer $container)
 	{
 		/* Process after */
-		$this->after();
+		$this->after($container->action);
 		
 		return $container;
 	}
@@ -83,9 +96,8 @@ class Route
 	/**
 	 * Init
 	 */
-	public function init()
+	public function init($action)
 	{
-		$this->initAction($this->action);
 	}
 	
 	
@@ -93,9 +105,8 @@ class Route
 	/**
 	 * Validate
 	 */
-	public function validate()
+	public function validate($action)
 	{
-		$this->validateAction($this->action);
 	}
 	
 	
@@ -103,29 +114,8 @@ class Route
 	/**
 	 * After
 	 */
-	public function after()
+	public function after($action)
 	{
-		$this->afterAction($this->action);
 	}
-	
-	
-	
-	/**
-	 * Init action
-	 */
-	public function initAction($action){}
-	
-	
-	
-	/**
-	 * Validate action
-	 */
-	public function validateAction($action){}
-	
-	
-	/**
-	 * After action
-	 */
-	public function afterAction($action){}
 	
 }

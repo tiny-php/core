@@ -28,9 +28,6 @@
 
 namespace TinyPHP;
 
-use Illuminate\Database\Connection;
-use Illuminate\Database\Schema\Grammars\Grammar;
-use Illuminate\Database\Capsule\Manager as Capsule;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -38,12 +35,11 @@ use Symfony\Component\HttpFoundation\Response;
 class App
 {
 	var $chains = [];
-	var $routes = [];
-	var $models = [];
-	var $commands = [];
+	var $entities = [];
 	var $modules = [];
 	var $di_container = null;
-	
+	var $render_container = null;
+	var $route_container = null;
 	
 	/**
 	 * Return instance
@@ -135,20 +131,9 @@ class App
 			},
 
 			/* Other classes */
-			\FastRoute\RouteParser::class => DI\create(\FastRoute\RouteParser\Std::class),
-			\FastRoute\DataGenerator::class => DI\create(
-				\FastRoute\DataGenerator\GroupCountBased::class
-			),
-			\FastRoute\RouteCollector::class => DI\autowire(\FastRoute\RouteCollector::class),
-			\FastRoute\Dispatcher::class =>
-				function (\Psr\Container\ContainerInterface $c)
-				{
-					$router = $c->get(\FastRoute\RouteCollector::class);
-					return new \FastRoute\Dispatcher\GroupCountBased( $router->getData() );
-				},
-
 			\TinyPHP\ApiResult::class => DI\create(\TinyPHP\ApiResult::class),
 			\TinyPHP\RenderContainer::class => DI\create(\TinyPHP\RenderContainer::class),
+			\TinyPHP\RouteContainer::class => DI\create(\TinyPHP\RouteContainer::class),
 			\TinyPHP\FatalError::class => DI\create(\TinyPHP\FatalError::class),
 		];
 	}
@@ -188,15 +173,14 @@ class App
 		}
 		
 		/* Register hooks */
-		$this->add_chain("init_routes", $this, "init_routes");
 		$this->register_hooks();
 		$this->call_chain("register_hooks");
 		
 		/* Build DI container */
 		$this->build_di_container();
 		
-		/* Init routes */
-		$this->call_chain("init_routes");
+		/* Init entities */
+		$this->call_chain("register_entities");
 		
 		/* Init app */
 		$this->call_chain("init_app");
@@ -233,70 +217,25 @@ class App
 	
 	
 	/**
-	 * Web app run
+	 * Add entity
 	 */
-	function run()
-	{
-		/* Fetch method and URI from somewhere */
-		$method = $_SERVER['REQUEST_METHOD'];
-		$uri = $_SERVER['REQUEST_URI'];
-		
-		$this->dispatchUri($method, $uri);
-	}
-	
-	
-	
-	/**
-	 * Add routes from class
-	 */
-	function addRoute($class_name, $file_name = "")
+	function addEntity($class_name, $file_name = "")
 	{
 		if ($file_name != "")
 		{
 			require_once $file_name;
 		}
-
-		$router = app(\FastRoute\RouteCollector::class);
-		$obj = new $class_name();
-		$obj->app = $this;
-		$obj->routes($router);
-		$this->routes[] = $class_name;
-	}
-	
-	
-	
-	/**
-	 * Add console command
-	 */
-	function addModel($class_name)
-	{
-		$this->models[] = $class_name;
-	}
-	
-	
-	
-	/**
-	 * Add console command
-	 */
-	function addConsoleCommand($class_name)
-	{
-		$this->commands[] = $class_name;
-	}
-	
-	
-	
-	/**
-	 * Create render container
-	 */
-	function createRenderContainer()
-	{
-		$container = make(RenderContainer::class);
-		$container->request = \Symfony\Component\HttpFoundation\Request::createFromGlobals();
-		$res = $this->call_chain("create_render_container", [
-			"container" => $container,
-		]);
-		$container = $res->container;
-		return $container;
+		
+		$class_parents = class_parents($class_name);
+		foreach ($class_parents as $parent_class_name)
+		{
+			if (!isset($this->entities[$parent_class_name]))
+			{
+				$this->entities[$parent_class_name] = [];
+			}
+			$this->entities[$parent_class_name][] = $class_name;
+		}
+		
 	}
 	
 	
@@ -306,7 +245,9 @@ class App
 	 */
 	function actionError($container, $e)
 	{
-		$container->response = make(\TinyPHP\FatalError::class)->handle_error($e, $container);
+		$container->response = make(\TinyPHP\FatalError::class)
+			->handle_error($e, $container)
+		;
 		return $container;
 	}
 	
@@ -330,14 +271,75 @@ class App
 	
 	
 	/**
-	 * Method not allowed
+	 * Make response
 	 */
-	function actionNotAllowed($container)
+	function makeResponse($render_container)
 	{
-		$container->response = make(\TinyPHP\FatalError::class)
-			->handle_error(new \TinyPHP\Exception\Http405Exception(), $container)
-		;
-		$res = $this->call_chain("method_not_allowed", [
+		$route_info = $render_container->route_info;
+		
+		/* Request before */
+		$res = $this->call_chain("request_before", [
+			"render_container" => $render_container,
+		]);
+		$render_container = $res->render_container;
+		
+		/* Route not found */
+		if ($route_info == null)
+		{
+			$render_container = $this->actionNotFound($render_container);
+		}
+		
+		/* Route found */
+		else
+		{
+			$method = $route_info["method"];
+			
+			if ($method instanceof \Closure)
+			{
+				$render_container = $method($render_container);
+			}
+			else if (is_array( $method ))
+			{
+				$render_container->action = $method[1];
+				
+				$obj = $method[0];
+				if (is_object($obj) && $obj instanceof Route)
+				{
+					$render_container->route = $obj;
+					$render_container = $obj->request_before($render_container);
+					if ($render_container->response == null)
+					{
+						call_user_func_array($method, [$render_container]);
+					}
+					$render_container = $obj->request_after($render_container);
+				}
+				else
+				{
+					call_user_func_array($method, [$render_container]);
+				}
+			}
+			
+		}
+		
+		/* Request after */
+		$res = $this->call_chain("request_after", [
+			"render_container" => $render_container,
+		]);
+		$render_container = $res->render_container;
+		
+		return $render_container;
+	}
+	
+	
+	
+	/**
+	 * Create render container
+	 */
+	function createRenderContainer()
+	{
+		$container = make(\TinyPHP\RenderContainer::class);
+		$container->request = \Symfony\Component\HttpFoundation\Request::createFromGlobals();
+		$res = $this->call_chain("create_render_container", [
 			"container" => $container,
 		]);
 		$container = $res->container;
@@ -347,139 +349,76 @@ class App
 	
 	
 	/**
-	 * Method not found
+	 * Web app run
 	 */
-	function methodNotFound($routeInfo)
+	function runWebApp()
 	{
-		$container = $this->createRenderContainer();
-		$this->actionNotFound($container)->sendResponse();
-	}
-	
-	
-	
-	/**
-	 * Method not allowed
-	 */
-	function methodNotAllowed($routeInfo)
-	{
-		$container = $this->createRenderContainer();
-		$this->actionNotAllowed($container)->sendResponse();
-	}
-	
-	
-	
-	/**
-	 * Method found
-	 */
-	function methodFound($routeInfo)
-	{
-		$handler = $routeInfo[1];
-		$args = $routeInfo[2];
-		
-		$container = $this->createRenderContainer();
-		$container->response = null;
-		$container->handler = $handler;
-		$container->args = $args;
-		
-		/* Request before */
-		$this->call_chain("request_before", [
-			"container" => $container,
-		]);
+		$this->render_container = $this->createRenderContainer();
+		$this->route_container = app(\TinyPHP\RouteContainer::class);
 		
 		try
 		{
-			if ($handler instanceof \Closure)
+			/* Add routes */
+			$routes_class_names = $this->getEntities(\TinyPHP\Route::class);
+			$this->route_container->addRoutesFromClass($res["routes"]);
+			$res = $this->call_chain("routes", [
+				"route_container" => $this->route_container,
+				"render_container" => $this->render_container
+			]);
+			$this->route_container = $res["route_container"];
+			$this->render_container = $res["render_container"];
+			
+			/* Find route */
+			$this->render_container = $this->route_container->findRoute
+			(
+				$this->render_container
+			);
+			$res = $this->call_chain("find_route", [
+				"render_container" => $this->render_container
+			]);
+			$this->render_container = $res["render_container"];
+			
+			/* Setup global context */
+			$this->render_container->context["global"]["route_info"] =
+				$this->render_container->route_info
+			;
+			
+			/* Call web app middleware chain */
+			$res = $this->call_chain("web_app_middleware", [
+				"render_container" => $this->render_container
+			]);
+			$this->render_container = $res["render_container"];
+			
+			/* Send response */
+			if ($this->render_container->response)
 			{
-				$container = $handler($container);
+				$this->render_container->sendResponse();
+				return;
 			}
-			else if (is_array( $handler ))
-			{
-				$container->action = $handler[1];
-				
-				$obj = $handler[0];
-				if (is_object($obj) && $obj instanceof Route)
-				{
-					$container->route = $obj;
-					$container = $obj->request_before($container);
-					if ($container->response == null)
-					{
-						call_user_func_array($handler, [$container]);
-					}
-					$container = $obj->request_after($container);
-				}
-				else
-				{
-					call_user_func_array($handler, [$container]);
-				}
-			}
+			
+			/* Make response */
+			$this->render_container = $this->makeResponse($this->render_container);
+			$res = $this->call_chain("make_response", [
+				"render_container" => $this->render_container
+			]);
+			$this->render_container = $res["render_container"];
 		}
+		
 		catch (\Exception $e)
 		{
-			$container = $this->actionError($container, $e);
+			$this->render_container = $this->actionError($this->render_container, $e);
 		}
 		
-		/* Request after */
-		$this->call_chain("request_after", [
-			"container" => $container,
-		]);
-		
-		$container->sendResponse();
+		/* Send response */
+		$this->render_container->sendResponse();
 	}
 	
 	
 	
 	/**
-	 * Run dispatcher
+	 * Run console app
 	 */
-	function dispatchUri($method, $uri)
-	{
-		/* Create dispatcher */
-		$route_collector = app(\FastRoute\RouteCollector::class);
-		$dispatcher = app(\FastRoute\Dispatcher::class);
-
-		/* Strip query string (?foo=bar) and decode URI */
-		if (false !== $pos = strpos($uri, '?'))
-		{
-			$uri = substr($uri, 0, $pos);
-		}
-
-		/* Dispatch page */
-		$routeInfo = $dispatcher->dispatch($method, $uri);
-		switch ($routeInfo[0])
-		{
-			// ... 404 Not Found
-			case \FastRoute\Dispatcher::NOT_FOUND:
-				$this->methodNotFound($routeInfo);
-				break;
-
-			// ... 405 Method Not Allowed
-			case \FastRoute\Dispatcher::METHOD_NOT_ALLOWED:
-				$this->methodNotAllowed($routeInfo);				
-				break;
-
-			// Found method
-			case \FastRoute\Dispatcher::FOUND:
-				$this->methodFound($routeInfo);
-				break;
-		}
-		
-	}
-	
-	
-	
-	/**
-	 * Console app created
-	 */
-	function consoleAppCreated()
-	{
-	}
-	
-	
-	
-	/**
-	 * Create console app
-	 */
-	function createConsoleApp()
+	function runConsoleApp()
 	{
 		$this->console = new \Symfony\Component\Console\Application();
 		
@@ -488,8 +427,6 @@ class App
 		{
 			$this->console->add( new $class_name() );
 		}
-		
-		$this->consoleAppCreated();
 		
 		return $this->console;
 	}
