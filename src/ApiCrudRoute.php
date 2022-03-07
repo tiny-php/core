@@ -28,35 +28,19 @@
 
 namespace TinyPHP;
 
-use FastRoute\RouteCollector;
-use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
-use TinyPHP\Exception\ItemNotFoundException;
-
 
 class ApiCrudRoute extends ApiRoute
 {
-	var $action = "";
-	var $class_name = "";
-	var $api_path = "";
 	var $filter = null;
 	var $start = 0;
 	var $limit = 1000;
-	var $total = 0;
-	var $items = null;
 	var $item = null;
 	var $old_data = null;
 	var $new_data = null;
-
-	
-	function __construct()
-	{
-		parent::__construct();
-		$this->rules = $this->getRules();
-	}
+	var $update_data = null;
 	
 	
-
+	
 	/**
 	 * Get rules
 	 */
@@ -80,250 +64,43 @@ class ApiCrudRoute extends ApiRoute
 	/**
 	 * Declare routes
 	 */
-	function routes(RouteCollector $routes)
+	function routes(RouteContainer $route_container)
 	{
 		if ($this->api_path != "")
 		{
-			$routes->addRoute
-			(
-				'GET',
-				'/' . $this->api_path . '/crud/search/',
-				[$this, "actionSearch"]
-			);
-			$routes->addRoute
-			(
-				'GET',
-				'/' . $this->api_path . '/crud/item/{id}/',
-				[$this, "actionGetById"]
-			);
-			$routes->addRoute
-			(
-				'POST',
-				'/' . $this->api_path . '/crud/create/',
-				[$this, "actionCreate"]
-			);
-			$routes->addRoute
-			(
-				'POST',
-				'/' . $this->api_path . '/crud/edit/{id}/',
-				[$this, "actionEdit"]
-			);
-			$routes->addRoute
-			(
-				'DELETE',
-				'/' . $this->api_path . '/crud/delete/{id}/',
-				[$this, "actionDelete"]
-			);
-			$routes->addRoute
-			(
-				'POST',
-				'/' . $this->api_path . '/crud/update/',
-				[$this, "actionUpdate"]
-			);
+			$route_container->addRoute([
+				"url" => "/" . $this->api_path . "/crud/search/",
+				"name" => $this->api_name . "search",
+				"method" => [$this, "actionSearch"],
+			]);
+			
+			$route_container->addRoute([
+				"url" => "/" . $this->api_path . "/crud/item/{id}/",
+				"name" => $this->api_name . "getById",
+				"method" => [$this, "actionGetById"],
+			]);
+			
+			$route_container->addRoute([
+				"methods" => [ "POST" ],
+				"url" => "/" . $this->api_path . "/crud/create/",
+				"name" => $this->api_name . "create",
+				"method" => [$this, "actionCreate"],
+			]);
+			
+			$route_container->addRoute([
+				"methods" => [ "POST" ],
+				"url" => "/" . $this->api_path . "/crud/edit/{id}/",
+				"name" => $this->api_name . "edit",
+				"method" => [$this, "actionEdit"],
+			]);
+			
+			$route_container->addRoute([
+				"methods" => [ "POST" ],
+				"url" => "/" . $this->api_path . "/crud/delete/{id}/",
+				"name" => $this->api_name . "delete",
+				"method" => [$this, "actionDelete"],
+			]);
 		}
-	}
-	
-	
-	
-	/**
-	 * Request before
-	 */
-	function request_before(RenderContainer $container)
-	{
-		$this->action = $container->action;
-		$this->api_result = make(ApiResult::class);
-		$this->container = $container;
-		
-		/* Init action */
-		$this->init();
-		
-		/* Validate action */
-		$this->validate();
-		
-		return $container;
-	}
-	
-	
-	
-	/**
-	 * Request after
-	 */
-	function request_after(RenderContainer $container)
-	{
-		/* Process after */
-		$this->after();
-		
-		/* Set result */
-		$container
-			->setResponse
-			(
-				$this->api_result->getResponse()
-			)
-		;
-		
-		return $container;
-	}
-	
-	
-	
-	/**
-	 * Init action
-	 */
-	public function initAction($action)
-	{
-		/* Search action */
-		if ($action == "actionSearch")
-		{
-			$this->initSearch();
-		}
-		
-		/* Action create or edit */
-		if ($action == "actionCreate" || $action == "actionEdit")
-		{
-			$this->initOldData();
-		}
-	}
-	
-	
-	
-	/**
-	 * Init action search
-	 */
-	public function initSearch()
-	{
-		$max_limit = $this->getMaxLimit();
-		if ($this->container->request->query->has("start"))
-		{
-			$this->start = (int)($this->container->request->query->get("start"));
-		}
-		if ($this->container->request->query->has("limit"))
-		{
-			$this->limit = (int)($this->container->request->query->get("limit"));
-		}
-		if ($this->limit > $max_limit) $this->limit = $max_limit;
-		$this->initFilter();
-	}
-	
-	
-	
-	/**
-	 * Read old data from post
-	 */
-	public function initOldData()
-	{
-		$content_type = $this->container->request->headers->get('Content-Type');
-		if (substr($content_type, 0, strlen('application/json')) != 'application/json')
-		{
-			throw new \Exception("Content type must be application/json");
-		}
-		
-		$post = json_decode($this->container->request->getContent(), true);
-		if ($post == null)
-		{
-			throw new \Exception("Post is null");
-		}
-		
-		$this->old_data = Utils::attr($post, "item");
-		if ($this->old_data === null)
-		{
-			throw new \Exception("Field item is empty");
-		}
-	}
-	
-	
-	
-	/**
-	 * After action
-	 */
-	function after()
-	{
-	}
-	
-	
-	
-	/**
-	 * Validate request
-	 */
-	public function validate()
-	{
-	}
-	
-	
-	
-	/**
-	 * Can query
-	 */
-	function canQuery()
-	{
-		return true;
-	}
-	
-	
-	
-	/**
-	 * Before query
-	 */
-	function beforeQuery()
-	{
-		foreach ($this->rules as $rule)
-		{
-			$rule->beforeQuery($this);
-		}
-	}
-	
-	
-	
-	/**
-	 * After query
-	 */
-	function afterQuery()
-	{
-		foreach ($this->rules as $rule)
-		{
-			$rule->afterQuery($this);
-		}
-	}
-	
-	
-	
-	/**
-	 * Create response
-	 */
-	function createResponse()
-	{
-		/* Create response */
-		foreach ($this->rules as $rule)
-		{
-			$rule->createResponse($this);
-		}
-	}
-	
-	
-	
-	/**
-	 * Returns filter by request
-	 */
-	public function initFilter()
-	{
-		$this->filter = [];
-		if ($this->container->request->query->has("filter"))
-		{
-			$this->filter = Utils::parseFilter
-			(
-				$this->container->request->query->get("filter"),
-				Utils::method($this, "allowFilterField")
-			);
-		}
-	}
-	
-	
-	
-	/**
-	 * Allow filter fields
-	 */
-	public function allowFilterField($field_name, $op, $value)
-	{
-		return false;
 	}
 	
 	
@@ -359,48 +136,94 @@ class ApiCrudRoute extends ApiRoute
 	
 	
 	/**
-	 * Find query
+	 * Allow filter fields
 	 */
-	public function findQuery($query)
+	public function allowFilter($field_name, $op, $value)
 	{
+		return false;
+	}
+	
+	
+	
+	/**
+	 * Build filter
+	 */
+	public function buildSearchFilter($query, $action)
+	{
+		/* Build filter */
+		$filter = $this->render_container->get("filter", null);
+		if ($filter != null && gettype($filter) == "array")
+		{
+			$filter = array_map
+			(
+				function ($obj)
+				{
+					$obj = json_decode($obj, true);
+					if (gettype($obj) != "array") return null;
+					if (count($obj) != 3) return null;
+					if (!$this->allowFilter($obj[0], $obj[1], $obj[2])) return null;
+					return [$obj[0], $obj[1], $obj[2]];
+				},
+				$filter
+			);
+			$filter = array_filter($filter, function ($item){ return $item !== null; } );
+		}
+		else
+		{
+			$filter = [];
+		}
+		
+		/* call chain */
+		$res = call_chain("api_crud_build_search_filter", [
+			"route" => $this,
+			"filter" => $filter,
+		]);
+		$filter = $res->filter;
+		
+		return $filter;
+	}
+	
+	
+	
+	/**
+	 * Serch query
+	 */
+	public function buildSearchQuery($query, $action)
+	{
+		$res = call_chain("api_crud_build_search_query", [
+			"route" => $this,
+			"query" => $query,
+			"action" => $action
+		]);
+		$query = $res["query"];
 		return $query;
 	}
 	
 	
 	
 	/**
-	 * Find items
+	 * Get item
 	 */
-	function findItems()
+	public function getItem($id)
 	{
 		$class_name = $this->class_name;
 		
-		/* Get query */
-		$query = $class_name::query();
+		/* Get primary key */
+		$pk = $class_name::firstPk();
 		
-		/* Limit */
-		$query
-			->where($this->filter)
-			->offset($this->start)
-			->limit($this->limit)
+		/* Get query */
+		$query = $class_name::select()
+			->addFilter($pk, "=", $id)
+			->limit(1)
 		;
 		
-		/* Filter query */
-		$query = $this->findQuery($query);
+		/* Search query */
+		$query = $this->buildSearchQuery($query, "actionGetById");
+		$data = $query->one();
 		
-		/* Result */
-		$this->items = $query->get();
-		$this->total = $query->count(); 
-	}
-	
-	
-	
-	/**
-	 * Returns find item id
-	 */
-	public function getFindItemId()
-	{
-		return $this->container->vars["id"];
+		/* Create item */
+		$item = $class_name::InstanceFromDatabase($data);
+		return $item;
 	}
 	
 	
@@ -410,193 +233,347 @@ class ApiCrudRoute extends ApiRoute
 	 */
 	public function findItem()
 	{
-		$class_name = $this->class_name;
-		$instance = new $class_name();
-		
-		/* Get query */
-		$id = urldecode( $this->getFindItemId() );
-		$query = $class_name::query()->where($instance->getKeyName(), "=", $id);
-		
-		/* Filter query */
-		$query = $this->findQuery($query);
-		
-		$this->item = $query->first();
-		
+		$id = $this->render_container->arg("id");
+		$this->item = $this->getItem($id);
 		if ($this->item == null)
 		{
 			throw new ItemNotFoundException();
 		}
+		
+		$this->old_data = $this->item->toArray();
 	}
 	
 	
 	
 	/**
-	 * Do action search
+	 * Init search
 	 */
-	function doActionSearch()
+	function initSearch()
 	{
-		/* Find items */
-		$this->findItems();
-			
-		/* Set response */
-		$result =
-		[
-			"items" => [],
-			"filter" => $this->filter,
-			"start" => $this->start,
-			"limit" => $this->limit,
-			"total" => $this->total,
-		];
+		$max_limit = $this->getMaxLimit();
+		$start = (int)$this->get("start", 0);
+		$limit = (int)$this->get("limit", 0);
+		if ($start < 0) $start = 0;
+		if ($limit < 0) $limit = 0;
+		if ($limit > $max_limit) $limit = $max_limit;
 		
-		/* Set items */
-		foreach ($this->items as $item)
+		$filter = $this->buildSearchFilter();
+		
+		$this->start = $start;
+		$this->limit = $limit;
+		$this->filter = $filter;
+	}
+	
+	
+	
+	/**
+	 * Do search
+	 */
+	function doSearch()
+	{
+		$class_name = $this->class_name;
+		
+		/* Get query */
+		$query = $class_name::select();
+		
+		/* Limit */
+		$query
+			->where($this->filter)
+			->offset($this->start)
+			->limit($this->limit)
+		;
+		
+		/* Search query */
+		$query = $this->buildSearchQuery($query, "actionSearch");
+		
+		/* Result */
+		$this->items = $query->all();
+		$this->total = $query->count(); 
+	}
+	
+	
+	
+	/**
+	 * Init update data
+	 */
+	function initUpdateData()
+	{
+		$content_type = $this->render_container->header('Content-Type');
+		if (substr($content_type, 0, strlen('application/json')) != 'application/json')
 		{
-			$item = $this->fromDatabase($item);
-			$result["items"][] = $item;
+			throw new \Exception("Content type must be application/json");
 		}
 		
-		/* Set result */
-		$this->api_result->success( $result, "Ok" );
+		$post = json_decode($this->render_container->request->getContent(), true);
+		if ($post == null)
+		{
+			throw new \Exception("Post is null");
+		}
+		
+		$update_data = Utils::attr($post, "item");
+		if ($update_data === null)
+		{
+			throw new \Exception("Post item is empty");
+		}
+		
+		$this->update_data = $this->toDatabase($update_data);
 	}
 	
 	
 	
 	/**
-	 * Do action get by id
+	 * Validate
 	 */
-	function doActionGetById()
+	public function validate($action)
 	{
-		/* Find items */
-		$this->findItem();
+		if ($action == "actionCreate")
+		{
+		}
 		
-		/* From database */
-		$item = $this->fromDatabase( $this->item->getAttributes() );
+		else if ($action == "actionEdit")
+		{
+		}
 		
-		/* Set result */
-		$this->api_result->success(["item" => $item ]);
+		else if ($action == "actionDelete")
+		{
+		}
 	}
 	
 	
 	
 	/**
-	 * Do action create
+	 * Process item
 	 */
-	function doActionCreate()
+	function processItem($action, $item)
 	{
-		/* Convert to database */
-		$old_data = $this->toDatabase($this->old_data);
-			
-		/* Update in database */
+		
+	}
+	
+	
+	
+	/**
+	 * Process after
+	 */
+	function processAfter($action)
+	{
+		
+	}
+	
+	
+	
+	/**
+	 * Do create
+	 */
+	function doCreate()
+	{
+		/* Create item */
 		$class_name = $this->class_name;
 		$this->item = new $class_name();
-		foreach ($old_data as $key => $value) $this->item->$key = $value;
+		
+		/* Set data */
+		if ($this->update_data != null)
+		{
+			foreach ($this->update_data as $key => $value)
+			{
+				$this->item->$key = $value;
+			}
+		}
+		
+		$this->processItem( "doCreate", $this->item );
+		
 		$this->item->save();
 		$this->item->refresh();
 		
-		/* From database */
-		$this->new_data = $this->fromDatabase($this->item);
+		$this->new_data = $this->item->toArray();
 		
-		/* Set result */
-		$this->api_result->success(["item"=>$this->new_data], "Ok");
+		$this->processAfter( "doCreate" );
 	}
 	
 	
 	
 	/**
-	 * Do action edit
+	 * Do edit
 	 */
-	function doActionEdit()
+	function doEdit()
 	{
-		/* Find item */
-		$this->findItem();
-			
-		/* Convert to database*/
-		$old_data = $this->toDatabase($this->old_data);
-		
-		/* Update in database */
-		$class_name = $this->model_name;
-		foreach ($old_data as $key => $value) $this->item->$key = $value;
-		if ($this->item)
+		/* Set data */
+		if ($this->update_data != null)
 		{
-			$this->item->save();
-			$this->item->refresh();
-		}
-		
-		/* From database */
-		$this->new_data = $this->fromDatabase($this->item);
-		
-		/* Set result */
-		$this->api_result->success(["item"=>$this->new_data], "Ok");
-	}
-	
-	
-	
-	/**
-	 * Do action delete
-	 */
-	function doActionDelete()
-	{
-		/* Find item */
-		$this->findItem();
-		
-		/* Delete from database */
-		if ($this->item)
-		{
-			$this->item->delete();
-		}
-		
-		/* From database */
-		$this->new_data = $this->fromDatabase($this->item);
-		
-		/* Set result */
-		$this->api_result->success(["item"=>$this->new_data], "Ok");
-	}
-	
-	
-	
-	/**
-	 * Do action
-	 */
-	function doAction($name, $arguments)
-	{
-		throw new \Exception("Unknown action " . $name);
-	}
-	
-	
-	
-	/**
-	 * Action
-	 */
-	public function __call($name, $arguments)
-	{
-		$container = $arguments[0];
-		
-		/* Can query */
-		$can_query = $this->canQuery();
-		if ($can_query)
-		{
-			/* Before query */
-			$this->beforeQuery();
-			
-			/* Find items */
-			$method_name = "do" . ucfirst($name);
-			if (method_exists($this, $method_name))
+			foreach ($this->update_data as $key => $value)
 			{
-				call_user_func([$this, $method_name]);
+				$this->item->$key = $value;
 			}
-			else
+		}
+		
+		$this->processItem( "doEdit", $this->item );
+		
+		$this->item->save();
+		$this->item->refresh();
+		
+		$this->new_data = $this->item->toArray();
+		
+		$this->processAfter( "doEdit" );
+	}
+	
+	
+	
+	/**
+	 * Do delete
+	 */
+	function doDelete()
+	{
+	}
+	
+	
+	
+	/**
+	 * Build search response
+	 */
+	function buildResponse($action)
+	{
+		if ($action == "actionSearch")
+		{
+			$result =
+			[
+				"items" => [],
+				"filter" => $this->filter,
+				"start" => $this->start,
+				"limit" => $this->limit,
+				"total" => $this->total,
+			];
+			
+			/* Set items */
+			foreach ($this->items as $item)
 			{
-				$this->doAction($name, $arguments);
+				$item = $this->fromDatabase($item);
+				$result["items"][] = $item;
 			}
 			
-			/* After query */
-			$this->afterQuery();
+			/* Set result */
+			$this->api_result->success( $result, "Ok" );
 		}
 		
-		/* Create response */
-		$this->createResponse();
+		else if ($action == "actionGetById")
+		{
+			$item = $this->fromDatabase($this->item);
+			
+			$result =
+			[
+				"item" => $item,
+			];
+			
+			/* Set result */
+			$this->api_result->success( $result, "Ok" );
+		}
 		
-		return $container;
-    }
+		else if ($action == "actionCreate")
+		{
+			$new_data = $this->fromDatabase($this->new_data);
+			
+			$result =
+			[
+				"new_data" => $new_data,
+			];
+			
+			/* Set result */
+			$this->api_result->success( $result, "Ok" );
+		}
+		
+		else if ($action == "actionEdit")
+		{
+			$old_data = $this->fromDatabase($this->old_data);
+			$new_data = $this->fromDatabase($this->new_data);
+			
+			$result =
+			[
+				"old_data" => $old_data,
+				"new_data" => $new_data,
+			];
+			
+			/* Set result */
+			$this->api_result->success( $result, "Ok" );
+		}
+		
+		else if ($action == "actionDelete")
+		{
+			$old_data = $this->fromDatabase($this->old_data);
+			
+			$result =
+			[
+				"old_data" => $old_data,
+			];
+			
+			/* Set result */
+			$this->api_result->success( $result, "Ok" );
+		}
+	}
 	
+	
+	
+	/**
+	 * Search action
+	 */
+	function actionSearch(RenderContainer $render_container)
+	{
+		$this->initSearch();
+		$this->doSearch();
+		$this->buildResponse("actionSearch");
+		return $render_container;
+	}
+	
+	
+	
+	/**
+	 * Get by id
+	 */
+	function actionGetById(RenderContainer $render_container)
+	{
+		$this->findItem();
+		$this->buildResponse("actionGetById");
+		return $render_container;
+	}
+	
+	
+	
+	/**
+	 * Action create
+	 */
+	function actionCreate(RenderContainer $render_container)
+	{
+		$this->initUpdateData();
+		$this->findItem();
+		$this->validate("actionCreate");
+		$this->doCreate();
+		$this->buildResponse("actionCreate");
+		return $render_container;
+	}
+	
+	
+	
+	/**
+	 * Action edit
+	 */
+	function actionEdit(RenderContainer $render_container)
+	{
+		$this->initUpdateData();
+		$this->findItem();
+		$this->validate("actionEdit");
+		$this->doEdit();
+		$this->buildResponse("actionEdit");
+		return $render_container;
+	}
+	
+	
+	
+	/**
+	 * Action delete
+	 */
+	function actionDelete(RenderContainer $render_container)
+	{
+		$this->findItem();
+		$this->validate("actionDelete");
+		$this->doDelete();
+		$this->buildResponse("actionDelete");
+		return $render_container;
+	}
 }

@@ -33,9 +33,8 @@ use FastRoute\RouteCollector;
 
 class ApiRoute
 {
-	var $action = "";
 	var $api_result = null;
-	var $container = null;
+	
 	
 	
 	/**
@@ -43,15 +42,9 @@ class ApiRoute
 	 */
 	function request_before(RenderContainer $container)
 	{
-		$this->action = $container->action;
 		$this->api_result = make(ApiResult::class);
-		$this->container = $container;
 		
-		/* Init action */
-		$this->init();
-		
-		/* Validate action */
-		$this->validate();
+		$container = parent::request_before($container);
 		
 		return $container;
 	}
@@ -63,16 +56,18 @@ class ApiRoute
 	 */
 	function request_after(RenderContainer $container)
 	{
-		/* Process after */
-		$this->after();
+		$container = parent::request_after($container);
 		
-		/* Set result */
-		$container
-			->setResponse
-			(
-				$this->api_result->getResponse()
-			)
-		;
+		/* Set api result */
+		if ($container->response == null)
+		{
+			$container
+				->setResponse
+				(
+					$this->api_result->getResponse()
+				)
+			;
+		}
 		
 		return $container;
 	}
@@ -80,28 +75,19 @@ class ApiRoute
 	
 	
 	/**
-	 * Init action
+	 * Init
 	 */
-	public function init()
-	{
-	}
-	
-	
-	
-	
-	/**
-	 * After action
-	 */
-	function after()
+	public function init($action)
 	{
 	}
 	
 	
 	
 	/**
-	 * Validate request
+	 * After
 	 */
-	public function validate()
+	public function after($action)
 	{
 	}
+	
 }

@@ -36,20 +36,7 @@ use TinyPHP\Exception\ItemNotFoundException;
 
 class Route
 {
-	
-	
-	/**
-	 * Declare routes
-	 */
-	function routes(RouteContainer $route_container)
-	{
-		$route_container->addRoute([
-			"url" => "/api/test/",
-			"name" => "site:test",
-			"method" => [$this, "actionTest"],
-		]);
-	}
-	
+	var $container = null;
 	
 	
 	/**
@@ -71,12 +58,8 @@ class Route
 		/* Init action */
 		$this->init($container->action);
 		
-		/* Validate action */
-		$this->validate($container->action);
-		
 		return $container;
 	}
-	
 	
 	
 	
@@ -97,15 +80,6 @@ class Route
 	 * Init
 	 */
 	public function init($action)
-	{
-	}
-	
-	
-	
-	/**
-	 * Validate
-	 */
-	public function validate($action)
 	{
 	}
 	
