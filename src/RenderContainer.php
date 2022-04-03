@@ -83,7 +83,7 @@ class RenderContainer
 	/**
 	 * Header
 	 */
-	function head($key, $value = "")
+	function header($key, $value = "")
 	{
 		return $this->request->headers->has($key) ?
 			$this->request->headers->get($key) : $value;

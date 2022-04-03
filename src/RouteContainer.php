@@ -67,7 +67,8 @@ class RouteContainer
 	 */
 	function addRoute($params)
 	{
-		$url = $params["url"];
+		$url = isset($params["url"]) ? $params["url"] : null;
+		$route_name = isset($params["name"]) ? $params["name"] : null;
 		
 		if (!isset($params["match"]))
 		{
@@ -88,7 +89,10 @@ class RouteContainer
 			$params["match"] = $url;
 		}
 		
-		$this->routes[$route_name] = $params;
+		if ($route_name)
+		{
+			$this->routes[$route_name] = $params;
+		}
 	}
 	
 	
@@ -141,6 +145,13 @@ class RouteContainer
 				$match = str_replace("/", "\\/", $match);
 				$match = "/^" . $match . "$/i";
 				$flag = preg_match_all($match, $request_uri, $matches);
+				foreach ($matches as $key => $val)
+				{
+					if (isset($val[0]))
+					{
+						$matches[$key] = $val[0];
+					}
+				}
 			}
 			
 			if ($flag)

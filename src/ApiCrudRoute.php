@@ -28,6 +28,8 @@
 
 namespace TinyPHP;
 
+use TinyORM\Model;
+
 
 class ApiCrudRoute extends ApiRoute
 {
@@ -38,6 +40,7 @@ class ApiCrudRoute extends ApiRoute
 	var $old_data = null;
 	var $new_data = null;
 	var $update_data = null;
+	var $rules = null;
 	
 	
 	
@@ -69,38 +72,49 @@ class ApiCrudRoute extends ApiRoute
 		if ($this->api_path != "")
 		{
 			$route_container->addRoute([
-				"url" => "/" . $this->api_path . "/crud/search/",
-				"name" => $this->api_name . "search",
+				"url" => "/api/" . $this->api_path . "/crud/search/",
+				"name" => $this->api_name . ":search",
 				"method" => [$this, "actionSearch"],
 			]);
 			
 			$route_container->addRoute([
-				"url" => "/" . $this->api_path . "/crud/item/{id}/",
-				"name" => $this->api_name . "getById",
+				"url" => "/api/" . $this->api_path . "/crud/item/{id}/",
+				"name" => $this->api_name . ":getById",
 				"method" => [$this, "actionGetById"],
 			]);
 			
 			$route_container->addRoute([
 				"methods" => [ "POST" ],
-				"url" => "/" . $this->api_path . "/crud/create/",
-				"name" => $this->api_name . "create",
+				"url" => "/api/" . $this->api_path . "/crud/create/",
+				"name" => $this->api_name . ":create",
 				"method" => [$this, "actionCreate"],
 			]);
 			
 			$route_container->addRoute([
 				"methods" => [ "POST" ],
-				"url" => "/" . $this->api_path . "/crud/edit/{id}/",
-				"name" => $this->api_name . "edit",
+				"url" => "/api/" . $this->api_path . "/crud/edit/{id}/",
+				"name" => $this->api_name . ":edit",
 				"method" => [$this, "actionEdit"],
 			]);
 			
 			$route_container->addRoute([
-				"methods" => [ "POST" ],
-				"url" => "/" . $this->api_path . "/crud/delete/{id}/",
-				"name" => $this->api_name . "delete",
+				"methods" => [ "DELETE" ],
+				"url" => "/api/" . $this->api_path . "/crud/delete/{id}/",
+				"name" => $this->api_name . ":delete",
 				"method" => [$this, "actionDelete"],
 			]);
 		}
+	}
+	
+	
+	
+	/**
+	 * Init
+	 */
+	function init($action)
+	{
+		parent::init($action);
+		$this->rules  = $this->getRules();
 	}
 	
 	
@@ -110,11 +124,17 @@ class ApiCrudRoute extends ApiRoute
 	 */
 	function fromDatabase($item)
 	{
+		if ($item instanceof Model)
+		{
+			$item = $item->toArray();
+		}
+		
 		$old_item = $item;
 		foreach ($this->rules as $rule)
 		{
 			$item = $rule->fromDatabase($this, $item, $old_item);
 		}
+		
 		return $item;
 	}
 	
@@ -148,10 +168,10 @@ class ApiCrudRoute extends ApiRoute
 	/**
 	 * Build filter
 	 */
-	public function buildSearchFilter($query, $action)
+	public function buildSearchFilter()
 	{
 		/* Build filter */
-		$filter = $this->render_container->get("filter", null);
+		$filter = $this->container->get("filter", null);
 		if ($filter != null && gettype($filter) == "array")
 		{
 			$filter = array_map
@@ -219,10 +239,8 @@ class ApiCrudRoute extends ApiRoute
 		
 		/* Search query */
 		$query = $this->buildSearchQuery($query, "actionGetById");
-		$data = $query->one();
+		$item = $query->one();
 		
-		/* Create item */
-		$item = $class_name::InstanceFromDatabase($data);
 		return $item;
 	}
 	
@@ -233,7 +251,7 @@ class ApiCrudRoute extends ApiRoute
 	 */
 	public function findItem()
 	{
-		$id = $this->render_container->arg("id");
+		$id = $this->container->arg("id");
 		$this->item = $this->getItem($id);
 		if ($this->item == null)
 		{
@@ -251,8 +269,8 @@ class ApiCrudRoute extends ApiRoute
 	function initSearch()
 	{
 		$max_limit = $this->getMaxLimit();
-		$start = (int)$this->get("start", 0);
-		$limit = (int)$this->get("limit", 0);
+		$start = (int)$this->container->get("start", 0);
+		$limit = (int)$this->container->get("limit", 10);
 		if ($start < 0) $start = 0;
 		if ($limit < 0) $limit = 0;
 		if ($limit > $max_limit) $limit = $max_limit;
@@ -285,10 +303,15 @@ class ApiCrudRoute extends ApiRoute
 		
 		/* Search query */
 		$query = $this->buildSearchQuery($query, "actionSearch");
+		$items = $query->all();
 		
 		/* Result */
-		$this->items = $query->all();
+		$this->items = [];
 		$this->total = $query->count(); 
+		foreach ($items as $item)
+		{
+			$this->items[] = $item->toArray();
+		}
 	}
 	
 	
@@ -298,13 +321,13 @@ class ApiCrudRoute extends ApiRoute
 	 */
 	function initUpdateData()
 	{
-		$content_type = $this->render_container->header('Content-Type');
+		$content_type = $this->container->header('Content-Type');
 		if (substr($content_type, 0, strlen('application/json')) != 'application/json')
 		{
 			throw new \Exception("Content type must be application/json");
 		}
 		
-		$post = json_decode($this->render_container->request->getContent(), true);
+		$post = json_decode($this->container->request->getContent(), true);
 		if ($post == null)
 		{
 			throw new \Exception("Post is null");
@@ -381,8 +404,8 @@ class ApiCrudRoute extends ApiRoute
 		
 		$this->processItem( "doCreate", $this->item );
 		
-		$this->item->save();
-		$this->item->refresh();
+		/* Save and refresh */
+		$this->item->save()->refresh();
 		
 		$this->new_data = $this->item->toArray();
 		
@@ -407,8 +430,8 @@ class ApiCrudRoute extends ApiRoute
 		
 		$this->processItem( "doEdit", $this->item );
 		
-		$this->item->save();
-		$this->item->refresh();
+		/* Save and refresh */
+		$this->item->save()->refresh();
 		
 		$this->new_data = $this->item->toArray();
 		
@@ -514,12 +537,12 @@ class ApiCrudRoute extends ApiRoute
 	/**
 	 * Search action
 	 */
-	function actionSearch(RenderContainer $render_container)
+	function actionSearch(RenderContainer $container)
 	{
 		$this->initSearch();
 		$this->doSearch();
 		$this->buildResponse("actionSearch");
-		return $render_container;
+		return $container;
 	}
 	
 	
@@ -527,11 +550,11 @@ class ApiCrudRoute extends ApiRoute
 	/**
 	 * Get by id
 	 */
-	function actionGetById(RenderContainer $render_container)
+	function actionGetById(RenderContainer $container)
 	{
 		$this->findItem();
 		$this->buildResponse("actionGetById");
-		return $render_container;
+		return $container;
 	}
 	
 	
@@ -539,14 +562,13 @@ class ApiCrudRoute extends ApiRoute
 	/**
 	 * Action create
 	 */
-	function actionCreate(RenderContainer $render_container)
+	function actionCreate(RenderContainer $container)
 	{
 		$this->initUpdateData();
-		$this->findItem();
 		$this->validate("actionCreate");
 		$this->doCreate();
 		$this->buildResponse("actionCreate");
-		return $render_container;
+		return $container;
 	}
 	
 	
@@ -554,14 +576,14 @@ class ApiCrudRoute extends ApiRoute
 	/**
 	 * Action edit
 	 */
-	function actionEdit(RenderContainer $render_container)
+	function actionEdit(RenderContainer $container)
 	{
 		$this->initUpdateData();
 		$this->findItem();
 		$this->validate("actionEdit");
 		$this->doEdit();
 		$this->buildResponse("actionEdit");
-		return $render_container;
+		return $container;
 	}
 	
 	
@@ -569,12 +591,12 @@ class ApiCrudRoute extends ApiRoute
 	/**
 	 * Action delete
 	 */
-	function actionDelete(RenderContainer $render_container)
+	function actionDelete(RenderContainer $container)
 	{
 		$this->findItem();
 		$this->validate("actionDelete");
 		$this->doDelete();
 		$this->buildResponse("actionDelete");
-		return $render_container;
+		return $container;
 	}
 }

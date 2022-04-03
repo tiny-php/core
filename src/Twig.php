@@ -71,7 +71,7 @@ class Twig
 		/* Enable cache */
 		if ($twig_cache)
 		{
-			$twig_opt['cache'] = ROOT_PATH . '/var/twig';
+			$twig_opt['cache'] = BASE_PATH . '/var/twig';
 			$twig_opt['auto_reload'] = true;
 		}
 		
@@ -80,7 +80,7 @@ class Twig
 		
 		/* Create twig loader */
 		$twig_loader = new \Twig\Loader\FilesystemLoader();
-		$twig_loader->addPath(ROOT_PATH . '/app/Templates', 'app');
+		$twig_loader->addPath(BASE_PATH . '/app/Templates', 'app');
 		
 		/* Create twig instance */
 		$this->twig = new \Twig\Environment
