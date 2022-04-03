@@ -56,7 +56,7 @@ class App
 	 */
 	function make($name, $params = [])
 	{
-		return $this->di_container->make($name, $params);
+		return ($this->di_container) ? $this->di_container->make($name, $params) : null;
 	}
 	
 	
@@ -79,7 +79,7 @@ class App
 		if (!isset($this->chains[$chain_name])) $this->chains[$chain_name] = [];
 		if (!isset($this->chains[$chain_name][$priority]))
 			$this->chains[$chain_name][$priority] = [];
-		$this->chains[$chain_name][$priority] = [ $class_name, $method_name ];
+		$this->chains[$chain_name][$priority][] = [ $class_name, $method_name ];
 	}
 	
 	
@@ -121,7 +121,7 @@ class App
 	function get_di_defs()
 	{
 		return [
-			"twig" => DI\create(\TinyPHP\Twig::class),
+			"twig" => \DI\create(\TinyPHP\Twig::class),
 			
 			/* App settings */
 			"settings" => function()
@@ -131,10 +131,10 @@ class App
 			},
 
 			/* Other classes */
-			\TinyPHP\ApiResult::class => DI\create(\TinyPHP\ApiResult::class),
-			\TinyPHP\RenderContainer::class => DI\create(\TinyPHP\RenderContainer::class),
-			\TinyPHP\RouteContainer::class => DI\create(\TinyPHP\RouteContainer::class),
-			\TinyPHP\FatalError::class => DI\create(\TinyPHP\FatalError::class),
+			\TinyPHP\ApiResult::class => \DI\create(\TinyPHP\ApiResult::class),
+			\TinyPHP\RenderContainer::class => \DI\create(\TinyPHP\RenderContainer::class),
+			\TinyPHP\RouteContainer::class => \DI\create(\TinyPHP\RouteContainer::class),
+			\TinyPHP\FatalError::class => \DI\create(\TinyPHP\FatalError::class),
 		];
 	}
 	
@@ -148,7 +148,7 @@ class App
 		$defs = $this->get_di_defs();
 		
 		/* Extend di container defs */
-		$res = chain("init_di_defs", ["defs"=>$defs]);
+		$res = call_chain("init_di_defs", ["defs"=>$defs]);
 		$defs = $res->defs;
 		
 		/* Create DI container */
@@ -236,6 +236,25 @@ class App
 			$this->entities[$parent_class_name][] = $class_name;
 		}
 		
+		if (!isset($this->entities[$class_name]))
+		{
+			$this->entities[$class_name] = [];
+		}
+		$this->entities[$class_name][] = $class_name;
+	}
+	
+	
+	
+	/**
+	 * Return entitie
+	 */
+	function getEntities($class_name)
+	{
+		if (isset($this->entities[$class_name]))
+		{
+			return $this->entities[$class_name];
+		}
+		return [];
 	}
 	
 	
@@ -261,7 +280,7 @@ class App
 		$container->response = make(\TinyPHP\FatalError::class)
 			->handle_error(new \TinyPHP\Exception\Http404Exception("Page"), $container)
 		;
-		$res = $this->call_chain("method_not_found", [
+		$res = $this->call_chain("page_not_found", [
 			"container" => $container,
 		]);
 		$container = $res->container;
@@ -360,10 +379,10 @@ class App
 		{
 			/* Add routes */
 			$routes_class_names = $this->getEntities(\TinyPHP\Route::class);
-			$this->route_container->addRoutesFromClass($res["routes"]);
+			$this->route_container->addRoutesFromClass($routes_class_names);
 			$res = $this->call_chain("routes", [
 				"route_container" => $this->route_container,
-				"render_container" => $this->render_container
+				"render_container" => $this->render_container,
 			]);
 			$this->route_container = $res["route_container"];
 			$this->render_container = $res["render_container"];
@@ -374,6 +393,7 @@ class App
 				$this->render_container
 			);
 			$res = $this->call_chain("find_route", [
+				"route_container" => $this->route_container,
 				"render_container" => $this->render_container
 			]);
 			$this->render_container = $res["render_container"];
@@ -390,24 +410,27 @@ class App
 			$this->render_container = $res["render_container"];
 			
 			/* Send response */
-			if ($this->render_container->response)
+			if (!$this->render_container->response)
 			{
-				$this->render_container->sendResponse();
-				return;
+				/* Make response */
+				$this->render_container = $this->makeResponse($this->render_container);
+				$res = $this->call_chain("make_response", [
+					"render_container" => $this->render_container
+				]);
+				$this->render_container = $res["render_container"];
 			}
-			
-			/* Make response */
-			$this->render_container = $this->makeResponse($this->render_container);
-			$res = $this->call_chain("make_response", [
-				"render_container" => $this->render_container
-			]);
-			$this->render_container = $res["render_container"];
 		}
 		
 		catch (\Exception $e)
 		{
 			$this->render_container = $this->actionError($this->render_container, $e);
 		}
+		
+		/* Before response */
+		$res = $this->call_chain("before_response", [
+			"render_container" => $this->render_container
+		]);
+		$this->render_container = $res["render_container"];
 		
 		/* Send response */
 		$this->render_container->sendResponse();

@@ -32,7 +32,7 @@ namespace TinyPHP;
 class FatalError
 {
 	
-	function handle_error($e, $container = null)
+	function handle_error($e, $container)
 	{
 		$http_code = 502;
 		if (property_exists($e, "http_code"))
@@ -59,9 +59,11 @@ class FatalError
 			;
 			return $response;
 		}
-		
-		http_response_code($http_code);
-		throw $e;
+		else
+		{
+			$container->error = $e;
+			return null;
+		}
 	}
 	
 }

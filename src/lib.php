@@ -61,10 +61,10 @@ function app($name = "")
 /**
  * Add chain
  */
-function add_chain($name = "", $params = [])
+function add_chain($chain_name, $class_name, $method_name, $priority = 0)
 {
 	global $app;
-	return $app->add_chain($name, $params);
+	return $app->add_chain($chain_name, $class_name, $method_name, $priority);
 }
 
 
@@ -106,7 +106,22 @@ function env($key)
  */
 function tiny_php_fatal_error($e)
 {
-	$response = make(\TinyPHP\FatalError::class)->handle_error($e);
-	$response->send();
+	global $app;
+	
+	$error = make(\TinyPHP\FatalError::class);
+	if ($error && $app != null && $app->render_container != null)
+	{
+		$container = $app->render_container;
+		$container->response = $error->handle_error($e, $container);
+		$res = $app->call_chain("before_response", [
+			"render_container" => $container
+		]);
+		$res->render_container->sendResponse();
+	}
+	else
+	{
+		http_response_code(502);
+		throw $e;
+	}
 }
 set_exception_handler("tiny_php_fatal_error");

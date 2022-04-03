@@ -49,6 +49,15 @@ class Route
 	
 	
 	/**
+	 * Declare routes
+	 */
+	function routes(RouteContainer $route_container)
+	{
+	}
+	
+	
+	
+	/**
 	 * Request before
 	 */
 	function request_before(RenderContainer $container)

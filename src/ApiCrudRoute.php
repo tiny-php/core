@@ -422,6 +422,7 @@ class ApiCrudRoute extends ApiRoute
 	 */
 	function doDelete()
 	{
+		$this->item->delete();
 	}
 	
 	

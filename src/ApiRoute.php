@@ -28,10 +28,8 @@
 
 namespace TinyPHP;
 
-use FastRoute\RouteCollector;
 
-
-class ApiRoute
+class ApiRoute extends Route
 {
 	var $api_result = null;
 	
@@ -44,6 +42,7 @@ class ApiRoute
 	{
 		$this->api_result = make(ApiResult::class);
 		
+		$container->is_api = true;
 		$container = parent::request_before($container);
 		
 		return $container;

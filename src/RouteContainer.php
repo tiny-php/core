@@ -43,7 +43,16 @@ class RouteContainer
 	 */
 	function addRoutesFromClass($routes_class_names)
 	{
-		foreach ($routes_class_names as $class_name)
+		if (gettype($routes_class_names) == "array")
+		{
+			foreach ($routes_class_names as $class_name)
+			{
+				$route = new $class_name();
+				$this->routes_objects[] = $route;
+				$route->routes($this);
+			}
+		}
+		else if (gettype($routes_class_names) == "string")
 		{
 			$route = new $class_name();
 			$this->routes_objects[] = $route;
@@ -111,7 +120,7 @@ class RouteContainer
 			
 			if ($flag === null)
 			{
-				$method = $this->request->getMethod();
+				$method = $render_container->request->getMethod();
 				if (isset($route["methods"]))
 				{
 					if (!in_array($method, $route["methods"]))

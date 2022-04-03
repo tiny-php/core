@@ -43,6 +43,7 @@ class RenderContainer
 	var $route = null;
 	var $route_info = null;
 	var $is_api = false;
+	var $error = false;
 	
 	
 	/**
@@ -176,6 +177,24 @@ class RenderContainer
 	function sendResponse()
 	{
 		if ($this->response) $this->response->send();
+		else if ($this->error)
+		{
+			if ($this->error instanceof \TinyPHP\Exception\Http404Exception)
+			{
+				http_response_code(404);
+				echo $this->error->getMessage();
+			}
+			else
+			{
+				$http_code = 502;
+				if (property_exists($this->error, "http_code"))
+				{
+					$http_code = $this->error->http_code;
+				}
+				http_response_code($http_code);
+				throw $this->error;
+			}
+		}
 	}
 	
 	
