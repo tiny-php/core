@@ -136,12 +136,9 @@ class RenderContainer
 	/**
 	 * Set context
 	 */
-	function setContext($arr)
+	function setContext($key, $value)
 	{
-		foreach ($arr as $key => $value)
-		{
-			$this->context[$key] = $value;
-		}
+		$this->context[$key] = $value;
 	}
 	
 	
@@ -149,9 +146,12 @@ class RenderContainer
 	/**
 	 * Add context
 	 */
-	function addContext($key, $value)
+	function addContext($arr)
 	{
-		$this->context[$key] = $value;
+		foreach ($arr as $key => $value)
+		{
+			$this->context[$key] = $value;
+		}
 	}
 	
 	

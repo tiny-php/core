@@ -69,38 +69,38 @@ class ApiCrudRoute extends ApiRoute
 	 */
 	function routes(RouteContainer $route_container)
 	{
-		if ($this->api_path != "")
+		if ($this->api_name != "")
 		{
 			$route_container->addRoute([
-				"url" => "/api/" . $this->api_path . "/crud/search/",
-				"name" => $this->api_name . ":search",
+				"url" => "/api/" . $this->api_name . "/crud/search/",
+				"name" => "api:" . $this->api_name . ":crud:search",
 				"method" => [$this, "actionSearch"],
 			]);
 			
 			$route_container->addRoute([
-				"url" => "/api/" . $this->api_path . "/crud/item/{id}/",
-				"name" => $this->api_name . ":getById",
+				"url" => "/api/" . $this->api_name . "/crud/item/{id}/",
+				"name" => "api:" . $this->api_name . ":crud:getById",
 				"method" => [$this, "actionGetById"],
 			]);
 			
 			$route_container->addRoute([
 				"methods" => [ "POST" ],
-				"url" => "/api/" . $this->api_path . "/crud/create/",
-				"name" => $this->api_name . ":create",
+				"url" => "/api/" . $this->api_name . "/crud/create/",
+				"name" => "api:" . $this->api_name . ":crud:create",
 				"method" => [$this, "actionCreate"],
 			]);
 			
 			$route_container->addRoute([
 				"methods" => [ "POST" ],
-				"url" => "/api/" . $this->api_path . "/crud/edit/{id}/",
-				"name" => $this->api_name . ":edit",
+				"url" => "/api/" . $this->api_name . "/crud/edit/{id}/",
+				"name" => "api:" . $this->api_name . ":crud:edit",
 				"method" => [$this, "actionEdit"],
 			]);
 			
 			$route_container->addRoute([
 				"methods" => [ "DELETE" ],
-				"url" => "/api/" . $this->api_path . "/crud/delete/{id}/",
-				"name" => $this->api_name . ":delete",
+				"url" => "/api/" . $this->api_name . "/crud/delete/{id}/",
+				"name" => "api:" . $this->api_name . ":delete",
 				"method" => [$this, "actionDelete"],
 			]);
 		}
@@ -114,7 +114,29 @@ class ApiCrudRoute extends ApiRoute
 	function init($action)
 	{
 		parent::init($action);
-		$this->rules  = $this->getRules();
+		
+		/* Get rules */
+		$this->rules = $this->getRules();
+		
+		/* Init rules */
+		foreach ($this->rules as $rule)
+		{
+			$rule->init($this, $action);
+		}
+	}
+	
+	
+	
+	/**
+	 * After request
+	 */
+	public function after($action)
+	{
+		/* After request rules */
+		foreach ($this->rules as $rule)
+		{
+			$rule->after($this, $action);
+		}
 	}
 	
 	
@@ -232,7 +254,7 @@ class ApiCrudRoute extends ApiRoute
 		$pk = $class_name::firstPk();
 		
 		/* Get query */
-		$query = $class_name::select()
+		$query = $class_name::selectQuery()
 			->addFilter($pk, "=", $id)
 			->limit(1)
 		;
@@ -292,7 +314,7 @@ class ApiCrudRoute extends ApiRoute
 		$class_name = $this->class_name;
 		
 		/* Get query */
-		$query = $class_name::select();
+		$query = $class_name::selectQuery();
 		
 		/* Limit */
 		$query
@@ -367,9 +389,12 @@ class ApiCrudRoute extends ApiRoute
 	/**
 	 * Process item
 	 */
-	function processItem($action, $item)
+	function processItem($action)
 	{
-		
+		foreach ($this->rules as $rule)
+		{
+			$rule->processItem($this, $action);
+		}
 	}
 	
 	
@@ -379,7 +404,10 @@ class ApiCrudRoute extends ApiRoute
 	 */
 	function processAfter($action)
 	{
-		
+		foreach ($this->rules as $rule)
+		{
+			$rule->processAfter($this, $action);
+		}
 	}
 	
 	
@@ -402,7 +430,7 @@ class ApiCrudRoute extends ApiRoute
 			}
 		}
 		
-		$this->processItem( "doCreate", $this->item );
+		$this->processItem( "doCreate" );
 		
 		/* Save and refresh */
 		$this->item->save()->refresh();
@@ -428,7 +456,7 @@ class ApiCrudRoute extends ApiRoute
 			}
 		}
 		
-		$this->processItem( "doEdit", $this->item );
+		$this->processItem( "doEdit" );
 		
 		/* Save and refresh */
 		$this->item->save()->refresh();
@@ -530,6 +558,12 @@ class ApiCrudRoute extends ApiRoute
 			/* Set result */
 			$this->api_result->success( $result, "Ok" );
 		}
+		
+		/* Build response */
+		foreach ($this->rules as $rule)
+		{
+			$rule->buildResponse($this, $action);
+		}
 	}
 	
 	
@@ -542,7 +576,6 @@ class ApiCrudRoute extends ApiRoute
 		$this->initSearch();
 		$this->doSearch();
 		$this->buildResponse("actionSearch");
-		return $container;
 	}
 	
 	
@@ -554,7 +587,6 @@ class ApiCrudRoute extends ApiRoute
 	{
 		$this->findItem();
 		$this->buildResponse("actionGetById");
-		return $container;
 	}
 	
 	
@@ -568,7 +600,6 @@ class ApiCrudRoute extends ApiRoute
 		$this->validate("actionCreate");
 		$this->doCreate();
 		$this->buildResponse("actionCreate");
-		return $container;
 	}
 	
 	
@@ -583,7 +614,6 @@ class ApiCrudRoute extends ApiRoute
 		$this->validate("actionEdit");
 		$this->doEdit();
 		$this->buildResponse("actionEdit");
-		return $container;
 	}
 	
 	
@@ -597,6 +627,5 @@ class ApiCrudRoute extends ApiRoute
 		$this->validate("actionDelete");
 		$this->doDelete();
 		$this->buildResponse("actionDelete");
-		return $container;
 	}
 }

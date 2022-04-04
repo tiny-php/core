@@ -113,6 +113,8 @@ class ApiResult
 	function clearError()
 	{
 		$this->error_code = 0;
+		$this->error_file = "";
+		$this->error_line = "";
 		$this->error_name = "";
 		$this->error_str = "";
 		return $this;
@@ -136,12 +138,17 @@ class ApiResult
 			],
 		];
 		
-		$is_debug = env("APP_DEBUG");
-		if ($is_debug && $this->error_name != "")
+		// $is_debug = env("APP_DEBUG");
+		if ($this->error_name != "" && $this->error_code < 0)
 		{
 			$res["error"]["file"] = $this->error_file;
 			$res["error"]["line"] = $this->error_line;
 			$res["error"]["trace"] = $this->error_trace;
+			if ($this->error_file != "" && $this->error_line != "")
+			{
+				$res["error"]["str"] = $this->error_str . " in " .
+					$this->error_file . " on line " . $this->error_line;
+			}
 		}
 		
 		return new Response

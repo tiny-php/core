@@ -280,9 +280,13 @@ class App
 		$container->response = make(\TinyPHP\FatalError::class)
 			->handle_error(new \TinyPHP\Exception\Http404Exception("Page"), $container)
 		;
-		$res = $this->call_chain("page_not_found", [
-			"container" => $container,
-		]);
+		$res = $this->call_chain
+		(
+			"page_not_found",
+			[
+				"container" => $container,
+			]
+		);
 		$container = $res->container;
 		return $container;
 	}
@@ -297,9 +301,13 @@ class App
 		$route_info = $render_container->route_info;
 		
 		/* Request before */
-		$res = $this->call_chain("request_before", [
-			"render_container" => $render_container,
-		]);
+		$res = $this->call_chain
+		(
+			"request_before",
+			[
+				"render_container" => $render_container,
+			]
+		);
 		$render_container = $res->render_container;
 		
 		/* Route not found */
@@ -315,7 +323,7 @@ class App
 			
 			if ($method instanceof \Closure)
 			{
-				$render_container = $method($render_container);
+				$method($render_container);
 			}
 			else if (is_array( $method ))
 			{
@@ -341,9 +349,13 @@ class App
 		}
 		
 		/* Request after */
-		$res = $this->call_chain("request_after", [
-			"render_container" => $render_container,
-		]);
+		$res = $this->call_chain
+		(
+			"request_after",
+			[
+				"render_container" => $render_container,
+			]
+		);
 		$render_container = $res->render_container;
 		
 		return $render_container;
@@ -358,9 +370,13 @@ class App
 	{
 		$container = make(\TinyPHP\RenderContainer::class);
 		$container->request = \Symfony\Component\HttpFoundation\Request::createFromGlobals();
-		$res = $this->call_chain("create_render_container", [
-			"container" => $container,
-		]);
+		$res = $this->call_chain
+		(
+			"create_render_container",
+			[
+				"container" => $container,
+			]
+		);
 		$container = $res->container;
 		return $container;
 	}
@@ -380,10 +396,14 @@ class App
 			/* Add routes */
 			$routes_class_names = $this->getEntities(\TinyPHP\Route::class);
 			$this->route_container->addRoutesFromClass($routes_class_names);
-			$res = $this->call_chain("routes", [
-				"route_container" => $this->route_container,
-				"render_container" => $this->render_container,
-			]);
+			$res = $this->call_chain
+			(
+				"routes",
+				[
+					"route_container" => $this->route_container,
+					"render_container" => $this->render_container,
+				]
+			);
 			$this->route_container = $res["route_container"];
 			$this->render_container = $res["render_container"];
 			
@@ -392,10 +412,14 @@ class App
 			(
 				$this->render_container
 			);
-			$res = $this->call_chain("find_route", [
-				"route_container" => $this->route_container,
-				"render_container" => $this->render_container
-			]);
+			$res = $this->call_chain
+			(
+				"find_route",
+				[
+					"route_container" => $this->route_container,
+					"render_container" => $this->render_container
+				]
+			);
 			$this->render_container = $res["render_container"];
 			
 			/* Setup global context */
@@ -404,9 +428,13 @@ class App
 			;
 			
 			/* Call web app middleware chain */
-			$res = $this->call_chain("web_app_middleware", [
-				"render_container" => $this->render_container
-			]);
+			$res = $this->call_chain
+			(
+				"web_app_middleware",
+				[
+					"render_container" => $this->render_container
+				]
+			);
 			$this->render_container = $res["render_container"];
 			
 			/* Send response */
@@ -414,9 +442,13 @@ class App
 			{
 				/* Make response */
 				$this->render_container = $this->makeResponse($this->render_container);
-				$res = $this->call_chain("make_response", [
-					"render_container" => $this->render_container
-				]);
+				$res = $this->call_chain
+				(
+					"make_response",
+					[
+						"render_container" => $this->render_container
+					]
+				);
 				$this->render_container = $res["render_container"];
 			}
 		}
@@ -427,9 +459,13 @@ class App
 		}
 		
 		/* Before response */
-		$res = $this->call_chain("before_response", [
-			"render_container" => $this->render_container
-		]);
+		$res = $this->call_chain
+		(
+			"before_response",
+			[
+				"render_container" => $this->render_container
+			]
+		);
 		$this->render_container = $res["render_container"];
 		
 		/* Send response */

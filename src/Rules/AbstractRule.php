@@ -40,13 +40,22 @@ class AbstractRule
 		foreach ($params as $key => $value)
 			$this->$key = $value;
 	}
-
+	
 	
 	
 	/**
-	 * Before query
+	 * Init rule
 	 */
-	function beforeQuery(ApiCrudRoute $router)
+	function init(ApiCrudRoute $router, $action)
+	{
+	}
+	
+	
+	
+	/**
+	 * After request rule
+	 */
+	function after(ApiCrudRoute $router, $action)
 	{
 	}
 	
@@ -55,7 +64,16 @@ class AbstractRule
 	/**
 	 * After query
 	 */
-	function afterQuery(ApiCrudRoute $router)
+	function processItem(ApiCrudRoute $router, $action)
+	{
+	}
+	
+	
+	
+	/**
+	 * After query
+	 */
+	function processAfter(ApiCrudRoute $router, $action)
 	{
 	}
 	
@@ -64,7 +82,7 @@ class AbstractRule
 	/**
 	 * Create response
 	 */
-	function createResponse(ApiCrudRoute $router)
+	function buildResponse(ApiCrudRoute $router, $action)
 	{
 	}
 	

@@ -45,12 +45,12 @@ class Dictionary extends AbstractRule
 	/**
 	 * After query
 	 */
-	function afterQuery(ApiCrudRoute $route)
+	function buildResponse(ApiCrudRoute $route, $action)
 	{
 		if ($this->api_name == null) return;
 		if ($this->class_name == null) return;
 		
-		if (isset($route->action, $this->actions))
+		if (in_array($action, $this->actions))
 		{
 			if (!isset($route->api_result->result["dictionary"]))
 			{
@@ -61,11 +61,11 @@ class Dictionary extends AbstractRule
 			
 			/* Get query */
 			$class_name = $this->class_name;
-			$query = $class_name::query();
+			$query = $class_name::selectQuery();
 			if ($this->findQuery) $query = $this->findQuery($query);
 			
 			/* Get items */
-			$items = $query->get();
+			$items = $query->all();
 			foreach ($items as $item)
 			{
 				if ($this->fromDatabase)
@@ -74,7 +74,7 @@ class Dictionary extends AbstractRule
 				}
 				if ($this->fields)
 				{
-					$item = Utils::object_intersect($item, $this->fields);
+					$item = Utils::object_intersect($item->toArray(), $this->fields);
 				}
 				$result[] = $item;
 			}
