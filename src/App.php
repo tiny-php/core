@@ -333,12 +333,19 @@ class App
 				if (is_object($obj) && $obj instanceof Route)
 				{
 					$render_container->route = $obj;
-					$render_container = $obj->request_before($render_container);
+					$obj->request_before($render_container);
 					if ($render_container->response == null)
 					{
+						if (count($method) >= 2)
+						{
+							if (!method_exists($method[0], $method[1]))
+							{
+								throw new \Exception("Method does not exist");
+							}
+						}
 						call_user_func_array($method, [$render_container]);
 					}
-					$render_container = $obj->request_after($render_container);
+					$obj->request_after($render_container);
 				}
 				else
 				{
@@ -481,13 +488,25 @@ class App
 	{
 		$this->console = new \Symfony\Component\Console\Application();
 		
-		/* Register console commands */
-		foreach ($this->commands as $class_name)
+		/* Get console commands */
+		$commands = $this->getEntities(\Symfony\Component\Console\Command\Command::class);
+		$res = $this->call_chain
+		(
+			"console_commands",
+			[
+				"commands" => $commands
+			]
+		);
+		$commands = $res["commands"];
+		
+		/* Add console commands */
+		foreach ($commands as $class_name)
 		{
 			$this->console->add( new $class_name() );
 		}
 		
-		return $this->console;
+		/* Run console */
+		$this->console->run();
 	}
 	
 	

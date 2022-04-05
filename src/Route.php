@@ -66,8 +66,6 @@ class Route
 		
 		/* Init action */
 		$this->init($container->action);
-		
-		return $container;
 	}
 	
 	
@@ -79,8 +77,6 @@ class Route
 	{
 		/* Process after */
 		$this->after($container->action);
-		
-		return $container;
 	}
 	
 	

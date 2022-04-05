@@ -43,9 +43,7 @@ class ApiRoute extends Route
 		$this->api_result = make(ApiResult::class);
 		
 		$container->is_api = true;
-		$container = parent::request_before($container);
-		
-		return $container;
+		parent::request_before($container);
 	}
 	
 	
@@ -55,7 +53,7 @@ class ApiRoute extends Route
 	 */
 	function request_after(RenderContainer $container)
 	{
-		$container = parent::request_after($container);
+		parent::request_after($container);
 		
 		/* Set api result */
 		if ($container->response == null)
@@ -67,8 +65,6 @@ class ApiRoute extends Route
 				)
 			;
 		}
-		
-		return $container;
 	}
 	
 	
