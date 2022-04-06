@@ -36,8 +36,8 @@ class Dictionary extends AbstractRule
 {
 	var $api_name = "";
 	var $class_name = "";
-	var $findQuery = null;
 	var $fromDatabase = null;
+	var $buildSearchQuery = null;
 	var $fields = null;
 	var $actions = ["actionSearch", "actionGetById"];
 	
@@ -62,7 +62,7 @@ class Dictionary extends AbstractRule
 			/* Get query */
 			$class_name = $this->class_name;
 			$query = $class_name::selectQuery();
-			if ($this->findQuery) $query = $this->findQuery($query);
+			if ($this->buildSearchQuery) $query = call_user_func($this->buildSearchQuery, $query);
 			
 			/* Get items */
 			$items = $query->all();
