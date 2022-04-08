@@ -146,7 +146,7 @@ class ApiCrudRoute extends ApiRoute
 	 */
 	function fromDatabase($item)
 	{
-		if ($item instanceof Model)
+		if ($item instanceof \TinyORM\Model)
 		{
 			$item = $item->toArray();
 		}
@@ -193,14 +193,13 @@ class ApiCrudRoute extends ApiRoute
 	public function buildSearchFilter()
 	{
 		/* Build filter */
-		$filter = $this->container->get("filter", null);
+		$filter = $this->container->post("filter", null);
 		if ($filter != null && gettype($filter) == "array")
 		{
 			$filter = array_map
 			(
 				function ($obj)
 				{
-					$obj = json_decode($obj, true);
 					if (gettype($obj) != "array") return null;
 					if (count($obj) != 3) return null;
 					if (!$this->allowFilter($obj[0], $obj[1], $obj[2])) return null;
@@ -291,8 +290,8 @@ class ApiCrudRoute extends ApiRoute
 	function initSearch()
 	{
 		$max_limit = $this->getMaxLimit();
-		$start = (int)$this->container->get("start", 0);
-		$limit = (int)$this->container->get("limit", 10);
+		$start = (int)$this->container->post("start", 0);
+		$limit = (int)$this->container->post("limit", 50);
 		if ($start < 0) $start = 0;
 		if ($limit < 0) $limit = 0;
 		if ($limit > $max_limit) $limit = $max_limit;
@@ -343,14 +342,8 @@ class ApiCrudRoute extends ApiRoute
 	 */
 	function initUpdateData()
 	{
-		$content_type = $this->container->header('Content-Type');
-		if (substr($content_type, 0, strlen('application/json')) != 'application/json')
-		{
-			throw new \Exception("Content type must be application/json");
-		}
-		
-		$post = json_decode($this->container->request->getContent(), true);
-		if ($post == null)
+		$post = $this->container->post();
+		if ($post == null || (gettype($post) == "array" && count($post) == 0))
 		{
 			throw new \Exception("Post is null");
 		}

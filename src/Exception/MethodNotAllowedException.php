@@ -31,7 +31,7 @@ namespace TinyPHP\Exception;
 use Symfony\Component\HttpFoundation\Response;
 
 
-class Http405Exception extends \Exception
+class MethodNotAllowedException extends \Exception
 {
     var $http_code;
     public function __construct(Throwable $previous = null)

@@ -72,8 +72,12 @@ class RenderContainer
 	/**
 	 * Post
 	 */
-	function post($key, $value = "")
+	function post($key = null, $value = "")
 	{
+		if (func_num_args() == 0)
+		{
+			return $this->request->request->all();
+		}
 		return $this->request->request->has($key) ?
 			$this->request->request->get($key) : $value;
 	}

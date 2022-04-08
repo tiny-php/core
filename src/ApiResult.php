@@ -38,6 +38,7 @@ use Symfony\Component\HttpFoundation\Response;
 class ApiResult
 {
 	var $result = null;
+	var $error = null;
 	var $error_code = 0;
 	var $error_name = "";
 	var $error_str = "";
@@ -81,6 +82,7 @@ class ApiResult
 	function exception($e)
 	{
 		$this->clearError();
+		$this->error = $e;
 		$this->error_str = $e->getMessage();
 		$this->error_code = $e->getCode();
 		$this->error_name = str_replace("\\", ".", get_class($e));
@@ -91,6 +93,13 @@ class ApiResult
 		{
 			$this->error_code = -1;
 		}
+		
+		if (get_class($this->error) == "Error")
+		{
+			$this->error_str = $e->getMessage() . " in " . $this->error_file .
+				" on line " . $this->error_line;
+		}
+		
 		return $this;
 	}
 

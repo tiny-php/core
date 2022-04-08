@@ -28,6 +28,7 @@
 
 namespace TinyPHP;
 
+use Symfony\Component\HttpFoundation\InputBag;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -40,6 +41,11 @@ class App
 	var $di_container = null;
 	var $render_container = null;
 	var $route_container = null;
+	
+	/* Errors */
+	const ERROR_OK = 1;
+	const ERROR_UNKNOWN = -1;
+	const ERROR_ITEM_NOT_FOUND = -4;
 	
 	
 	/**
@@ -378,6 +384,19 @@ class App
 	{
 		$container = make(\TinyPHP\RenderContainer::class);
 		$container->request = \Symfony\Component\HttpFoundation\Request::createFromGlobals();
+		
+		/* Parse post is application/json */
+		$content_type = $container->header('Content-Type');
+		if (substr($content_type, 0, strlen('application/json')) == 'application/json')
+		{
+			$json = $container->request->getContent();
+			$json = @json_decode($json, true);
+			if ($json)
+			{
+				$container->request->request = new InputBag($json);
+			}
+		}
+		
 		$res = $this->call_chain
 		(
 			"create_render_container",
