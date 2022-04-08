@@ -146,8 +146,7 @@ class ApiResult
 			$res["error"]["trace"] = $this->error_trace;
 			if ($this->error_file != "" && $this->error_line != "")
 			{
-				$res["error"]["str"] = $this->error_str . " in " .
-					$this->error_file . " on line " . $this->error_line;
+				$res["error"]["str"] = $this->error_str;
 			}
 		}
 		

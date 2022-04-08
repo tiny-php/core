@@ -43,11 +43,11 @@ class ReadOnly extends AbstractRule
 	 */
 	function toDatabase(ApiCrudRoute $router, $item, $old_item)
 	{
-		if ($router->action == "create" && !$this->can_create)
+		if ($router->action == "actionCreate" && !$this->can_create && isset($item[$field_name]))
 		{
             unset($item[$field_name]);
 		}
-		else if ($router->action == "update" && !$this->can_update)
+		else if ($router->action == "actionEdit" && !$this->can_update && isset($item[$field_name]))
 		{
             unset($item[$field_name]);
 		}

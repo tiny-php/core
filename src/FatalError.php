@@ -28,13 +28,16 @@
 
 namespace TinyPHP;
 
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+
 
 class FatalError
 {
 	
 	function handle_error($e, $container)
 	{
-		$http_code = 502;
+		$http_code = Response::HTTP_INTERNAL_SERVER_ERROR;
 		if (property_exists($e, "http_code"))
 		{
 			$http_code = $e->http_code;

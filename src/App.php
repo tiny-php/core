@@ -41,6 +41,7 @@ class App
 	var $render_container = null;
 	var $route_container = null;
 	
+	
 	/**
 	 * Return instance
 	 */

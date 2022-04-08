@@ -36,6 +36,7 @@ use TinyPHP\Exception\ItemNotFoundException;
 
 class Route
 {
+	var $action = null;
 	var $container = null;
 	
 	
@@ -63,6 +64,7 @@ class Route
 	function request_before(RenderContainer $container)
 	{
 		$this->container = $container;
+		$this->action = $container->action;
 		
 		/* Init action */
 		$this->init($container->action);
