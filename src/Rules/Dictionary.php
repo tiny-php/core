@@ -68,13 +68,14 @@ class Dictionary extends AbstractRule
 			$items = $query->all();
 			foreach ($items as $item)
 			{
+				$item = $item->toArray();
 				if ($this->fromDatabase)
 				{
 					$item = $this->fromDatabase($item);
 				}
 				if ($this->fields)
 				{
-					$item = Utils::object_intersect($item->toArray(), $this->fields);
+					$item = Utils::object_intersect($item, $this->fields);
 				}
 				$result[] = $item;
 			}
