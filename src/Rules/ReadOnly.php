@@ -33,24 +33,66 @@ use TinyPHP\ApiCrudRoute;
 
 class ReadOnly extends AbstractRule
 {
-    var $api_name = "";
-    var $can_create = false;
-    var $can_update = false;
+	var $api_name = "";
+	var $can_create = false;
+	var $can_update = false;
 
 
-    /**
+	/**
 	 * To database
 	 */
-	function toDatabase(ApiCrudRoute $router, $item, $old_item)
+	function toDatabase($action, $item, $old_item)
 	{
-		if ($router->action == "actionCreate" && !$this->can_create && isset($item[$field_name]))
+		if ($action == "actionCreate" &&
+			!$this->can_create && isset($item[$this->api_name]))
 		{
-            unset($item[$field_name]);
+			unset($item[$this->api_name]);
 		}
-		else if ($router->action == "actionEdit" && !$this->can_update && isset($item[$field_name]))
+		else if ($action == "actionEdit" &&
+			!$this->can_update && isset($item[$this->api_name]))
 		{
-            unset($item[$field_name]);
+			unset($item[$this->api_name]);
+		}
+		else
+		{
+			unset($item[$this->api_name]);
 		}
 		return $item;
 	}
+	
+	
+	
+	/**
+	 * Process item before query
+	 */
+	function processItem($action)
+	{
+		$item = $this->route->item;
+		$restore = false;
+		
+		if ($action == "actionCreate" &&
+			!$this->can_create &&
+			isset($item[$this->api_name])
+		)
+		{
+			$restore = true;
+		}
+		else if ($action == "actionEdit" &&
+			!$this->can_update &&
+			isset($item[$this->api_name])
+		)
+		{
+			$restore = true;
+		}
+		else
+		{
+			$restore = true;
+		}
+		
+		if ($restore)
+		{
+			$item->restoreField($this->api_name);
+		}
+	}
+	
 }

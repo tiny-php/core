@@ -45,16 +45,16 @@ class Dictionary extends AbstractRule
 	/**
 	 * After query
 	 */
-	function buildResponse(ApiCrudRoute $route, $action)
+	function buildResponse($action)
 	{
 		if ($this->api_name == null) return;
 		if ($this->class_name == null) return;
 		
 		if (in_array($action, $this->actions))
 		{
-			if (!isset($route->api_result->result["dictionary"]))
+			if (!isset($this->route->api_result->result["dictionary"]))
 			{
-				$route->api_result->result["dictionary"] = [];
+				$this->route->api_result->result["dictionary"] = [];
 			}
 			
 			$result = [];
@@ -62,7 +62,8 @@ class Dictionary extends AbstractRule
 			/* Get query */
 			$class_name = $this->class_name;
 			$query = $class_name::selectQuery();
-			if ($this->buildSearchQuery) $query = call_user_func($this->buildSearchQuery, $query);
+			if ($this->buildSearchQuery)
+				$query = call_user_func_array($this->buildSearchQuery, [$this, $action, $query]);
 			
 			/* Get items */
 			$items = $query->all();
@@ -80,7 +81,7 @@ class Dictionary extends AbstractRule
 				$result[] = $item;
 			}
 			
-			$route->api_result->result["dictionary"][$this->api_name] = $result;
+			$this->route->api_result->result["dictionary"][$this->api_name] = $result;
 		}
 		
 	}

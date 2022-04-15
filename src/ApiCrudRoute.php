@@ -135,7 +135,7 @@ class ApiCrudRoute extends ApiRoute
 		/* After request rules */
 		foreach ($this->rules as $rule)
 		{
-			$rule->after($this, $action);
+			$rule->after($action);
 		}
 	}
 	
@@ -144,7 +144,7 @@ class ApiCrudRoute extends ApiRoute
 	/**
 	 * From database
 	 */
-	function fromDatabase($item)
+	function fromDatabase($action, $item)
 	{
 		if ($item instanceof \TinyORM\Model)
 		{
@@ -154,7 +154,7 @@ class ApiCrudRoute extends ApiRoute
 		$old_item = $item;
 		foreach ($this->rules as $rule)
 		{
-			$item = $rule->fromDatabase($this, $item, $old_item);
+			$item = $rule->fromDatabase($action, $item, $old_item);
 		}
 		
 		return $item;
@@ -165,12 +165,12 @@ class ApiCrudRoute extends ApiRoute
 	/**
 	 * To database
 	 */
-	function toDatabase($item)
+	function toDatabase($action, $item)
 	{
 		$old_item = $item;
 		foreach ($this->rules as $rule)
 		{
-			$item = $rule->toDatabase($this, $item, $old_item);
+			$item = $rule->toDatabase($action, $item, $old_item);
 		}
 		return $item;
 	}
@@ -229,7 +229,7 @@ class ApiCrudRoute extends ApiRoute
 	/**
 	 * Serch query
 	 */
-	public function buildSearchQuery($query, $action)
+	public function buildSearchQuery($action, $query)
 	{
 		$res = call_chain("api_crud_build_search_query", [
 			"route" => $this,
@@ -254,12 +254,12 @@ class ApiCrudRoute extends ApiRoute
 		
 		/* Get query */
 		$query = $class_name::selectQuery()
-			->addFilter($pk, "=", $id)
+			->addFilter("t.".$pk, "=", $id)
 			->limit(1)
 		;
 		
 		/* Search query */
-		$query = $this->buildSearchQuery($query, "actionGetById");
+		$query = $this->buildSearchQuery("actionGetById", $query);
 		$item = $query->one();
 		
 		return $item;
@@ -323,7 +323,7 @@ class ApiCrudRoute extends ApiRoute
 		;
 		
 		/* Search query */
-		$query = $this->buildSearchQuery($query, "actionSearch");
+		$query = $this->buildSearchQuery("actionSearch", $query);
 		$items = $query->all();
 		
 		/* Result */
@@ -340,7 +340,7 @@ class ApiCrudRoute extends ApiRoute
 	/**
 	 * Init update data
 	 */
-	function initUpdateData()
+	function initUpdateData($action)
 	{
 		$post = $this->container->post();
 		if ($post == null || (gettype($post) == "array" && count($post) == 0))
@@ -354,7 +354,7 @@ class ApiCrudRoute extends ApiRoute
 			throw new \Exception("Post item is empty");
 		}
 		
-		$this->update_data = $this->toDatabase($update_data);
+		$this->update_data = $this->toDatabase($action, $update_data);
 	}
 	
 	
@@ -380,26 +380,26 @@ class ApiCrudRoute extends ApiRoute
 	
 	
 	/**
-	 * Process item
+	 * Process item before query
 	 */
 	function processItem($action)
 	{
 		foreach ($this->rules as $rule)
 		{
-			$rule->processItem($this, $action);
+			$rule->processItem($action);
 		}
 	}
 	
 	
 	
 	/**
-	 * Process after
+	 * Process after query
 	 */
 	function processAfter($action)
 	{
 		foreach ($this->rules as $rule)
 		{
-			$rule->processAfter($this, $action);
+			$rule->processAfter($action);
 		}
 	}
 	
@@ -423,14 +423,14 @@ class ApiCrudRoute extends ApiRoute
 			}
 		}
 		
-		$this->processItem( "doCreate" );
+		$this->processItem( "actionCreate" );
 		
 		/* Save and refresh */
-		$this->item->save()->refresh();
+		$this->item->save();
 		
 		$this->new_data = $this->item->toArray();
 		
-		$this->processAfter( "doCreate" );
+		$this->processAfter( "actionCreate" );
 	}
 	
 	
@@ -449,14 +449,14 @@ class ApiCrudRoute extends ApiRoute
 			}
 		}
 		
-		$this->processItem( "doEdit" );
+		$this->processItem( "actionEdit" );
 		
 		/* Save and refresh */
-		$this->item->save()->refresh();
+		$this->item->save();
 		
 		$this->new_data = $this->item->toArray();
 		
-		$this->processAfter( "doEdit" );
+		$this->processAfter( "actionEdit" );
 	}
 	
 	
@@ -490,7 +490,7 @@ class ApiCrudRoute extends ApiRoute
 			/* Set items */
 			foreach ($this->items as $item)
 			{
-				$item = $this->fromDatabase($item);
+				$item = $this->fromDatabase($action, $item);
 				$result["items"][] = $item;
 			}
 			
@@ -500,7 +500,7 @@ class ApiCrudRoute extends ApiRoute
 		
 		else if ($action == "actionGetById")
 		{
-			$item = $this->fromDatabase($this->item);
+			$item = $this->fromDatabase($action, $this->item);
 			
 			$result =
 			[
@@ -513,7 +513,7 @@ class ApiCrudRoute extends ApiRoute
 		
 		else if ($action == "actionCreate")
 		{
-			$new_data = $this->fromDatabase($this->new_data);
+			$new_data = $this->fromDatabase($action, $this->new_data);
 			
 			$result =
 			[
@@ -526,8 +526,8 @@ class ApiCrudRoute extends ApiRoute
 		
 		else if ($action == "actionEdit")
 		{
-			$old_data = $this->fromDatabase($this->old_data);
-			$new_data = $this->fromDatabase($this->new_data);
+			$old_data = $this->fromDatabase($action, $this->old_data);
+			$new_data = $this->fromDatabase($action, $this->new_data);
 			
 			$result =
 			[
@@ -541,7 +541,7 @@ class ApiCrudRoute extends ApiRoute
 		
 		else if ($action == "actionDelete")
 		{
-			$old_data = $this->fromDatabase($this->old_data);
+			$old_data = $this->fromDatabase($action, $this->old_data);
 			
 			$result =
 			[
@@ -555,7 +555,7 @@ class ApiCrudRoute extends ApiRoute
 		/* Build response */
 		foreach ($this->rules as $rule)
 		{
-			$rule->buildResponse($this, $action);
+			$rule->buildResponse($action);
 		}
 	}
 	
@@ -589,7 +589,7 @@ class ApiCrudRoute extends ApiRoute
 	 */
 	function actionCreate(RenderContainer $container)
 	{
-		$this->initUpdateData();
+		$this->initUpdateData("actionCreate");
 		$this->validate("actionCreate");
 		$this->doCreate();
 		$this->buildResponse("actionCreate");
@@ -602,7 +602,7 @@ class ApiCrudRoute extends ApiRoute
 	 */
 	function actionEdit(RenderContainer $container)
 	{
-		$this->initUpdateData();
+		$this->initUpdateData("actionEdit");
 		$this->findItem();
 		$this->validate("actionEdit");
 		$this->doEdit();

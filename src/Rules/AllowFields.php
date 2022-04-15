@@ -41,7 +41,7 @@ class AllowFields extends AbstractRule
 	/**
 	 * From database
 	 */
-	function fromDatabase(ApiCrudRoute $router, $item, $old_item)
+	function fromDatabase($action, $item, $old_item)
 	{
         if ($this->fields === null) return $item;
 		$item = Utils::object_intersect($item, $this->fields);
@@ -52,11 +52,26 @@ class AllowFields extends AbstractRule
     /**
 	 * To database
 	 */
-	function toDatabase(ApiCrudRoute $router, $item, $old_item)
+	function toDatabase($action, $item, $old_item)
 	{
         if ($this->fields === null) return $item;
 		$item = Utils::object_intersect($item, $this->fields);
 		return $item;
     }
     
+	
+	
+	/**
+	 * Process item before query
+	 */
+	function processItem($action)
+	{
+		if ($this->fields === null) return;
+		
+		//$this->
+		
+		//$item = Utils::object_intersect($item, $this->fields);
+		//return $item;
+	}
+	
 }

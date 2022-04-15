@@ -39,7 +39,7 @@ class JsonField extends AbstractRule
 	 /**
 	 * From database
 	 */
-	function fromDatabase(ApiCrudRoute $router, $item, $old_item)
+	function fromDatabase($action, $item, $old_item)
 	{
 		if (isset($item[$this->api_name]))
 		{
@@ -52,7 +52,7 @@ class JsonField extends AbstractRule
 	/**
 	 * To database
 	 */
-	function toDatabase(ApiCrudRoute $router, $item, $old_item)
+	function toDatabase($action, $item, $old_item)
 	{
 		if (isset($item[$this->api_name]))
 		{

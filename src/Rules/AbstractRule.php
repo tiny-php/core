@@ -33,6 +33,8 @@ use TinyPHP\ApiCrudRoute;
 
 class AbstractRule
 {
+	var $action = "";
+	var $route = null;
 	var $fields = null;
 
 	function __construct($params = [])
@@ -46,8 +48,10 @@ class AbstractRule
 	/**
 	 * Init rule
 	 */
-	function init(ApiCrudRoute $router, $action)
+	function init(ApiCrudRoute $route, $action)
 	{
+		$this->route = $route;
+		$this->action = $action;
 	}
 	
 	
@@ -55,7 +59,16 @@ class AbstractRule
 	/**
 	 * After request rule
 	 */
-	function after(ApiCrudRoute $router, $action)
+	function after($action)
+	{
+	}
+	
+	
+	
+	/**
+	 * Process item before query
+	 */
+	function processItem($action)
 	{
 	}
 	
@@ -64,16 +77,7 @@ class AbstractRule
 	/**
 	 * After query
 	 */
-	function processItem(ApiCrudRoute $router, $action)
-	{
-	}
-	
-	
-	
-	/**
-	 * After query
-	 */
-	function processAfter(ApiCrudRoute $router, $action)
+	function processAfter($action)
 	{
 	}
 	
@@ -82,7 +86,7 @@ class AbstractRule
 	/**
 	 * Create response
 	 */
-	function buildResponse(ApiCrudRoute $router, $action)
+	function buildResponse($action)
 	{
 	}
 	
@@ -91,7 +95,7 @@ class AbstractRule
 	/**
 	 * From database
 	 */
-	function fromDatabase(ApiCrudRoute $router, $item, $old_item)
+	function fromDatabase($action, $item, $old_item)
 	{
 		return $item;
 	}
@@ -100,7 +104,7 @@ class AbstractRule
 	/**
 	 * To database
 	 */
-	function toDatabase(ApiCrudRoute $router, $item, $old_item)
+	function toDatabase($action, $item, $old_item)
 	{
 		return $item;
 	}
