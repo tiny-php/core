@@ -65,7 +65,7 @@ class ReadOnly extends AbstractRule
 	/**
 	 * Process item before query
 	 */
-	function processItem($action)
+	function processItemOld($action)
 	{
 		$item = $this->route->item;
 		$restore = false;

@@ -285,6 +285,16 @@ class ApiCrudRoute extends ApiRoute
 	
 	
 	/**
+	 * Refresh item
+	 */
+	public function refreshItem()
+	{
+		$this->item = $this->getItem( $this->item->getFirstPk() );
+	}
+	
+	
+	
+	/**
 	 * Init search
 	 */
 	function initSearch()
@@ -428,6 +438,9 @@ class ApiCrudRoute extends ApiRoute
 		/* Save and refresh */
 		$this->item->save();
 		
+		/* Refresh item */
+		$this->refreshItem();
+		
 		$this->new_data = $this->item->toArray();
 		
 		$this->processAfter( "actionCreate" );
@@ -453,6 +466,9 @@ class ApiCrudRoute extends ApiRoute
 		
 		/* Save and refresh */
 		$this->item->save();
+		
+		/* Refresh item */
+		$this->refreshItem();
 		
 		$this->new_data = $this->item->toArray();
 		
