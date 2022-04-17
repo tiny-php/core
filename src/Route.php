@@ -75,10 +75,10 @@ class Route
 	/**
 	 * Request after
 	 */
-	function request_after(RenderContainer $container)
+	function request_after()
 	{
 		/* Process after */
-		$this->after($container->action);
+		$this->after($this->container->action);
 	}
 	
 	

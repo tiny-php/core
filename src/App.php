@@ -350,9 +350,9 @@ class App
 								throw new \Exception("Method does not exist");
 							}
 						}
-						call_user_func_array($method, [$render_container]);
+						call_user_func($method);
 					}
-					$obj->request_after($render_container);
+					$obj->request_after();
 				}
 				else
 				{

@@ -254,7 +254,8 @@ class ApiCrudRoute extends ApiRoute
 		
 		/* Get query */
 		$query = $class_name::selectQuery()
-			->addFilter("t.".$pk, "=", $id)
+			// ->debug(true)
+			->where("t.".$pk, "=", $id)
 			->limit(1)
 		;
 		
@@ -580,7 +581,7 @@ class ApiCrudRoute extends ApiRoute
 	/**
 	 * Search action
 	 */
-	function actionSearch(RenderContainer $container)
+	function actionSearch()
 	{
 		$this->initSearch();
 		$this->doSearch();
@@ -592,7 +593,7 @@ class ApiCrudRoute extends ApiRoute
 	/**
 	 * Get by id
 	 */
-	function actionGetById(RenderContainer $container)
+	function actionGetById()
 	{
 		$this->findItem();
 		$this->buildResponse("actionGetById");
@@ -603,7 +604,7 @@ class ApiCrudRoute extends ApiRoute
 	/**
 	 * Action create
 	 */
-	function actionCreate(RenderContainer $container)
+	function actionCreate()
 	{
 		$this->initUpdateData("actionCreate");
 		$this->validate("actionCreate");
@@ -616,7 +617,7 @@ class ApiCrudRoute extends ApiRoute
 	/**
 	 * Action edit
 	 */
-	function actionEdit(RenderContainer $container)
+	function actionEdit()
 	{
 		$this->initUpdateData("actionEdit");
 		$this->findItem();
@@ -630,7 +631,7 @@ class ApiCrudRoute extends ApiRoute
 	/**
 	 * Action delete
 	 */
-	function actionDelete(RenderContainer $container)
+	function actionDelete()
 	{
 		$this->findItem();
 		$this->validate("actionDelete");

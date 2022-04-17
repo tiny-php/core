@@ -51,14 +51,14 @@ class ApiRoute extends Route
 	/**
 	 * Request after
 	 */
-	function request_after(RenderContainer $container)
+	function request_after()
 	{
-		parent::request_after($container);
+		parent::request_after();
 		
 		/* Set api result */
-		if ($container->response == null)
+		if ($this->container->response == null)
 		{
-			$container
+			$this->container
 				->setResponse
 				(
 					$this->api_result->getResponse()
