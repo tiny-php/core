@@ -584,6 +584,7 @@ class ApiCrudRoute extends ApiRoute
 	function actionSearch()
 	{
 		$this->initSearch();
+		$this->validate("actionSearch");
 		$this->doSearch();
 		$this->buildResponse("actionSearch");
 	}
@@ -596,6 +597,7 @@ class ApiCrudRoute extends ApiRoute
 	function actionGetById()
 	{
 		$this->findItem();
+		$this->validate("actionGetById");
 		$this->buildResponse("actionGetById");
 	}
 	
