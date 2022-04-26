@@ -338,8 +338,14 @@ class ApiCrudRoute extends ApiRoute
 		$items = $query->all();
 		
 		/* Result */
-		$this->items = [];
+		$this->items = $items;
 		$this->total = $query->count(); 
+		
+		$this->processAfter( "actionSearch" );
+		
+		/* Convert to Array */
+		$items = $this->items;
+		$this->items = [];
 		foreach ($items as $item)
 		{
 			$this->items[] = $item->toArray();
@@ -598,6 +604,7 @@ class ApiCrudRoute extends ApiRoute
 	{
 		$this->findItem();
 		$this->validate("actionGetById");
+		$this->processAfter( "actionGetById" );
 		$this->buildResponse("actionGetById");
 	}
 	
