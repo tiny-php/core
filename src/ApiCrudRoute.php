@@ -36,6 +36,7 @@ class ApiCrudRoute extends ApiRoute
 	var $filter = null;
 	var $start = 0;
 	var $limit = 1000;
+	var $pages = 1000;
 	var $item = null;
 	var $old_data = null;
 	var $new_data = null;
@@ -301,8 +302,10 @@ class ApiCrudRoute extends ApiRoute
 	function initSearch()
 	{
 		$max_limit = $this->getMaxLimit();
-		$start = (int)$this->container->post("start", 0);
+		$start = (int)$this->container->post("start", -1);
+		$page = (int)$this->container->post("page", -1);
 		$limit = (int)$this->container->post("limit", 50);
+		if ($start < 0) $start = ($page - 1) * $limit;
 		if ($start < 0) $start = 0;
 		if ($limit < 0) $limit = 0;
 		if ($limit > $max_limit) $limit = $max_limit;
@@ -340,6 +343,8 @@ class ApiCrudRoute extends ApiRoute
 		/* Result */
 		$this->items = $items;
 		$this->total = $query->count(); 
+		$this->page = $query->getPage(); 
+		$this->pages = $query->getPages(); 
 		
 		$this->processAfter( "actionSearch" );
 		
@@ -505,9 +510,11 @@ class ApiCrudRoute extends ApiRoute
 			[
 				"items" => [],
 				"filter" => $this->filter,
-				"start" => $this->start,
-				"limit" => $this->limit,
-				"total" => $this->total,
+				"start" => (int)$this->start,
+				"limit" => (int)$this->limit,
+				"total" => (int)$this->total,
+				"pages" => (int)$this->pages,
+				"page" => (int)$this->page,
 			];
 			
 			/* Set items */
