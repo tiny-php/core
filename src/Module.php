@@ -29,103 +29,12 @@
 namespace TinyPHP;
 
 
-use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
-use TinyPHP\Exception\ItemNotFoundException;
-
-
-class Route
+class Module
 {
-	var $action = null;
-	var $container = null;
 	
-	
-	/**
-	 * Constructor
-	 */
-	function __construct()
-	{
-	}
-	
-	
-	
-	/**
-	 * Declare routes
-	 */
-	function routes(RouteContainer $route_container)
-	{
-	}
-	
-	
-	
-	/**
-	 * Request before
-	 */
-	function request_before(RenderContainer $container)
-	{
-		$this->container = $container;
-		$this->action = $container->action;
-		
-		/* Init action */
-		$this->init($container->action);
-	}
-	
-	
-	
-	/**
-	 * Request after
-	 */
-	function request_after()
-	{
-		$this->after($this->container->action);
-	}
-	
-	
-	
-	/**
-	 * Init
-	 */
-	public function init($action)
-	{
-	}
-	
-	
-	
-	/**
-	 * After
-	 */
-	public function after($action)
-	{
-	}
-	
-	
-	
-	/**
-	 * Render
-	 */
-	public function render($template, $data = null)
-	{
-		$this->container->render($template, $data);
-	}
-	
-	
-	
-	/**
-	 * Add breadcrumb
-	 */
-	public function add_breadcrumb($template, $data = null)
-	{
-		$this->container->add_breadcrumb($template, $data);
-	}
-	
-	
-	
-	/**
-	 * Make url
-	 */
-	function url($route_name, $params = [])
-	{
-		$app = app();
-		return $app->url($route_name, $params);
-	}
+    static function twig_module_name()
+    {
+        return "tiny-php";
+    }
+    
 }

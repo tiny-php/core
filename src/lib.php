@@ -125,3 +125,14 @@ function tiny_php_fatal_error($e)
 	}
 }
 set_exception_handler("tiny_php_fatal_error");
+
+
+/**
+ * Make url
+ */
+function url($route_name, $params = [])
+{
+	$app = app();
+	$url = $app->route_container->url($route_name, $params);
+	return $app->render_container->base_url . $url;
+}

@@ -171,11 +171,18 @@ class App
 	 */
 	function init()
 	{
+		/* Add modules */
 		$this->add_modules();
+		
+		/* Add TinyPHP module */
+		$this->modules[] = \TinyPHP\Module::class;
 		
 		/* Register modules hooks */
 		foreach ($this->modules as $module_class_name)
 		{
+			if (!class_exists($module_class_name)) continue;
+			if (!method_exists($module_class_name, "register_hooks")) continue;
+			
 			call_user_func([ $module_class_name, "register_hooks" ]);
 		}
 		
@@ -312,10 +319,10 @@ class App
 		(
 			"request_before",
 			[
-				"render_container" => $render_container,
+				"container" => $render_container,
 			]
 		);
-		$render_container = $res->render_container;
+		$render_container = $res->container;
 		
 		/* Route not found */
 		if ($route_info == null)
@@ -367,10 +374,10 @@ class App
 		(
 			"request_after",
 			[
-				"render_container" => $render_container,
+				"container" => $render_container,
 			]
 		);
-		$render_container = $res->render_container;
+		$render_container = $res->container;
 		
 		return $render_container;
 	}
@@ -420,6 +427,16 @@ class App
 		
 		try
 		{
+			/* Get base url */
+			$res = call_chain("base_url", [
+				"base_url" => "",
+				"request" => $this->render_container->request
+			]);
+			
+			/* Remove last slash */
+			$base_url = preg_replace("/\/+$/", "", $res["base_url"]);
+			$this->render_container->base_url = $base_url;
+			
 			/* Add routes */
 			$routes_class_names = $this->getEntities(\TinyPHP\Route::class);
 			$this->route_container->addRoutesFromClass($routes_class_names);
@@ -429,6 +446,7 @@ class App
 				[
 					"route_container" => $this->route_container,
 					"render_container" => $this->render_container,
+					"container" => $this->render_container,
 				]
 			);
 			$this->route_container = $res["route_container"];
@@ -444,7 +462,8 @@ class App
 				"find_route",
 				[
 					"route_container" => $this->route_container,
-					"render_container" => $this->render_container
+					"render_container" => $this->render_container,
+					"container" => $this->render_container,
 				]
 			);
 			$this->render_container = $res["render_container"];
@@ -459,10 +478,10 @@ class App
 			(
 				"web_app_middleware",
 				[
-					"render_container" => $this->render_container
+					"container" => $this->render_container
 				]
 			);
-			$this->render_container = $res["render_container"];
+			$this->render_container = $res["container"];
 			
 			/* Send response */
 			if (!$this->render_container->response)
@@ -473,10 +492,10 @@ class App
 				(
 					"make_response",
 					[
-						"render_container" => $this->render_container
+						"container" => $this->render_container
 					]
 				);
-				$this->render_container = $res["render_container"];
+				$this->render_container = $res["container"];
 			}
 		}
 		
@@ -530,4 +549,13 @@ class App
 	}
 	
 	
+	
+	/**
+	 * Make url
+	 */
+	function url($route_name, $params = [])
+	{
+		$url = $this->route_container->url($route_name, $params);
+		return $this->render_container->base_url . $url;
+	}
 }

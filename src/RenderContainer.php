@@ -35,6 +35,7 @@ use Symfony\Component\HttpFoundation\Response;
 class RenderContainer
 {
 	var $action = "";
+	var $breadcrumbs = [];
 	var $request = null;
 	var $response = null;
 	var $handler = null;
@@ -42,8 +43,23 @@ class RenderContainer
 	var $context = [ "global" => [], ];
 	var $route = null;
 	var $route_info = null;
+	var $base_url = "";
 	var $is_api = false;
 	var $error = false;
+	
+	
+	
+	/**
+	 * Add breadcrumbs
+	 */
+	function add_breadcrumb($url, $label)
+	{
+		$this->breadcrumbs[] = [
+			"url" => $url,
+			"label" => $label,
+		];
+	}
+	
 	
 	
 	/**
@@ -167,7 +183,9 @@ class RenderContainer
 	{
 		if ($this->response == null)
 		{
-			$this->response = new Response("", Response::HTTP_OK, ['content-type' => 'text/html']);
+			$this->response = new Response(
+				"", Response::HTTP_OK, ['content-type' => 'text/html']
+			);
 		}
 		$this->response->setContent($content);
 		return $this;
@@ -211,6 +229,13 @@ class RenderContainer
 		$context = $this->context;
 		if ($data != null) $context = array_merge($context, $data);
 		$twig = app("twig");
+		
+		/* Setup context */
+		$context["route"] = $this->route;
+		$context["route_info"] = $this->route_info;
+		$context["base_url"] = $this->base_url;
+		$context["container"] = $this;
+		
 		$content = $twig->render($template, $context);
 		$this->response = new Response
 		(

@@ -29,103 +29,38 @@
 namespace TinyPHP;
 
 
-use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
-use TinyPHP\Exception\ItemNotFoundException;
-
-
-class Route
+class Twig_Functions
 {
-	var $action = null;
-	var $container = null;
-	
 	
 	/**
-	 * Constructor
+	 * Dump
 	 */
-	function __construct()
+	static function dump($v)
 	{
+		echo "<pre>";
+		var_dump($v);
+		echo "</pre>";
 	}
 	
 	
 	
 	/**
-	 * Declare routes
+	 * Output selected="selected"
 	 */
-	function routes(RouteContainer $route_container)
+	static function form_selected($value, $check_value)
 	{
+		if ($value == $check_value) return "selected='selected'";
+		return "";
 	}
-	
 	
 	
 	/**
-	 * Request before
+	 * Output checked="checked"
 	 */
-	function request_before(RenderContainer $container)
+	static function form_checked($value, $check_value)
 	{
-		$this->container = $container;
-		$this->action = $container->action;
-		
-		/* Init action */
-		$this->init($container->action);
+		if ($value == $check_value) return "checked='checked'";
+		return "";
 	}
 	
-	
-	
-	/**
-	 * Request after
-	 */
-	function request_after()
-	{
-		$this->after($this->container->action);
-	}
-	
-	
-	
-	/**
-	 * Init
-	 */
-	public function init($action)
-	{
-	}
-	
-	
-	
-	/**
-	 * After
-	 */
-	public function after($action)
-	{
-	}
-	
-	
-	
-	/**
-	 * Render
-	 */
-	public function render($template, $data = null)
-	{
-		$this->container->render($template, $data);
-	}
-	
-	
-	
-	/**
-	 * Add breadcrumb
-	 */
-	public function add_breadcrumb($template, $data = null)
-	{
-		$this->container->add_breadcrumb($template, $data);
-	}
-	
-	
-	
-	/**
-	 * Make url
-	 */
-	function url($route_name, $params = [])
-	{
-		$app = app();
-		return $app->url($route_name, $params);
-	}
 }

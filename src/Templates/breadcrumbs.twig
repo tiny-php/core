@@ -1,0 +1,21 @@
+{% set separator = "/" %}
+
+<nav class="breadcrumbs" itemscope="" itemtype="http://schema.org/BreadcrumbList">
+	{% for item in container.breadcrumbs %}
+		
+		<div class='breadcrumbs__item {% if loop.last %}last{% endif %}' 
+			itemprop="itemListElement" itemscope="" itemtype="http://schema.org/ListItem"
+		>
+			<a class='{% if not loop.last %}link{% else %}nolink{% endif %}'
+				itemprop="item" href="{{ item['url'] }}">
+				<span itemprop="name">{{ item['label'] }}</span>
+			</a>
+			<meta itemprop="position" content="{{ loop.index }}" />
+		</div>
+		
+		{% if not loop.last %}
+		<span class="breadcrumbs__item separator"> {{ separator }} </span>
+		{% endif %}
+		
+	{% endfor %}
+</nav>

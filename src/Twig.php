@@ -80,7 +80,42 @@ class Twig
 		
 		/* Create twig loader */
 		$twig_loader = new \Twig\Loader\FilesystemLoader();
-		$twig_loader->addPath(BASE_PATH . '/app/Templates', 'app');
+		
+		/* Add modules */
+		$app = app();
+		$modules = $app->modules;
+		
+		foreach ($modules as $module_class)
+		{
+			if (!class_exists($module_class)) continue;
+			
+			$c = new \ReflectionClass($module_class);
+			$module_path = dirname($c->getFileName());
+			$module_name = "";
+			
+			/* Get module name */
+			if (method_exists($module_class, "twig_module_name"))
+			{
+				$module_name = $module_class::twig_module_name();
+			}
+			else
+			{
+				$arr = explode("\\", $module_class);
+				array_pop($arr);
+				$module_name = implode("-", $arr);
+				$module_name = strtolower($module_name);
+			}
+			
+			/* Call chain */
+			$res = call_chain("twig_module_name", [
+				"module_class" => $module_class,
+				"module_path" => $module_path,
+				"module_name" => $module_name,
+			]);
+			$module_name = $res["module_name"];
+			
+			$twig_loader->addPath($module_path . '/Templates', $module_name);
+		}
 		
 		/* Create twig instance */
 		$this->twig = new \Twig\Environment
@@ -94,34 +129,92 @@ class Twig
 			->setDefaultStrategy('html');
 		
 		/* Undefined functions */
-		$this->twig->registerUndefinedFunctionCallback(function ($name) {
-			if (!function_exists($name))
-			{
-				return false;
-			}
-			return new \Twig\TwigFunction($name, $name);
-		});
+		$this->twig->registerUndefinedFunctionCallback([$this, "call_undefined_function"]);
 		
 		/* Undefined filter */
-		$this->twig->registerUndefinedFilterCallback(function ($name) {
-			if (!function_exists($name))
-			{
-				return false;
-			}
-			return new \Twig\TwigFunction($name, $name);
-		});
+		$this->twig->registerUndefinedFilterCallback([$this, "call_undefined_function"]);
 		
-		/* Custom function */
-		$this->twig->addFunction( new \Twig\TwigFunction( 'function', function($name)
-		{
-			$args = func_get_args();
-			array_shift($args);
-			return call_user_func_array($name, $args);
-		} ) );
+		/* Custom php function */
+		$this->twig->addFunction( new \Twig\TwigFunction(
+			'function', [$this, "call_php_function"]
+		) );
 		
-		call_chain("twig", ["twig"=>$this->twig, "obj"=>$this]);
+		call_chain("twig", ["twig"=>$this->twig, "obj"=>$this ]);
 		
 		return $this->twig;
+	}
+	
+	
+	
+	/**
+	 * Call undefined function
+	 */
+	function call_undefined_function($name)
+	{
+		$app = app();
+		
+		/* Call redefined function */
+		$res = call_chain("twig_undefined_function", [
+			"name" => $name,
+			"callback" => null,
+		]);
+		if ($res["callback"] != null)
+		{
+			return new \Twig\TwigFunction($name, $res["callback"]);
+		}
+		
+		/* Get modules */
+		$modules = $app->modules;
+		
+		/* Get namespaces */
+		$modules = array_map
+		(
+			function($item){
+				$arr = explode("\\", $item);
+				array_pop($arr);
+				$arr[] = "Twig_Functions";
+				$item = implode("\\", $arr);
+				return $item;
+			},
+			$modules
+		);
+		
+		/* Find twig function in modules */
+		foreach ($modules as $twig_functions_class)
+		{
+			/* Check if function is exists */
+			if (!class_exists($twig_functions_class)) continue;
+			if (!method_exists($twig_functions_class, $name)) continue;
+			
+			return new \Twig\TwigFunction($name, [
+				$twig_functions_class, $name
+			]);
+		}
+		
+		return false;
+	}
+	
+	
+	
+	/**
+	 * Call php function
+	 */
+	function call_php_function($name)
+	{
+		/* Can call php function */
+		$res = call_chain("twig_php_function", [
+			"name" => $name,
+			"allow" => 1,
+		]);
+		if ($res["allow"] == 0)
+		{
+			return false;
+		}
+		
+		/* Call php function */
+		$args = func_get_args();
+		array_shift($args);
+		return call_user_func_array($name, $args);
 	}
 	
 	
@@ -131,6 +224,9 @@ class Twig
 	 */
 	function render($template, $context)
 	{
+		$res = call_chain("twig_context", ["context"=>$context]);
+		$context = $res["context"];
+		
 		if (gettype($template) == 'array')
 		{
 			foreach ($template as $t)

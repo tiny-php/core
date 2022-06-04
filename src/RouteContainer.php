@@ -98,6 +98,22 @@ class RouteContainer
 	
 	
 	/**
+	 * Make url
+	 */
+	function url($route_name, $params = [])
+	{
+		if (isset($this->routes[$route_name]))
+		{
+			$route_info = $this->routes[$route_name];
+			$url = isset($route_info["url"]) ? $route_info["url"] : "";
+			return $url;
+		}
+		return "";
+	}
+	
+	
+	
+	/**
 	 * Find route
 	 */
 	function findRoute($render_container)
@@ -106,6 +122,12 @@ class RouteContainer
 		$uri = $render_container->request->getRequestUri();
 		$arr = parse_url($uri);
 		$request_uri = $arr["path"];
+		
+		/* Base url */
+		if (strpos($request_uri, $render_container->base_url) === 0)
+		{
+			$request_uri = substr($request_uri, strlen($render_container->base_url));
+		}
 		
 		/* Find route */
 		foreach ($this->routes as $route)
