@@ -111,11 +111,21 @@ class Route
 	
 	
 	/**
+	 * Set content
+	 */
+	public function setContent($content)
+	{
+		$this->container->setContent($content);
+	}
+	
+	
+	
+	/**
 	 * Add breadcrumb
 	 */
-	public function add_breadcrumb($template, $data = null)
+	public function add_breadcrumb($name, $title)
 	{
-		$this->container->add_breadcrumb($template, $data);
+		$this->container->add_breadcrumb($name, $title);
 	}
 	
 	

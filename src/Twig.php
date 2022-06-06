@@ -114,7 +114,11 @@ class Twig
 			]);
 			$module_name = $res["module_name"];
 			
-			$twig_loader->addPath($module_path . '/Templates', $module_name);
+			$dir = $module_path . '/Templates';
+			if (is_dir($dir))
+			{
+				$twig_loader->addPath($module_path . '/Templates', $module_name);
+			}
 		}
 		
 		/* Create twig instance */

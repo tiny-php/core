@@ -124,9 +124,12 @@ class RouteContainer
 		$request_uri = $arr["path"];
 		
 		/* Base url */
-		if (strpos($request_uri, $render_container->base_url) === 0)
+		if ($render_container->base_url != "")
 		{
-			$request_uri = substr($request_uri, strlen($render_container->base_url));
+			if (strpos($request_uri, $render_container->base_url) === 0)
+			{
+				$request_uri = substr($request_uri, strlen($render_container->base_url));
+			}
 		}
 		
 		/* Find route */
