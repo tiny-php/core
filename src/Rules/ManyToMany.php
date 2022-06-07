@@ -32,14 +32,42 @@ use TinyPHP\ApiCrudRoute;
 use TinyPHP\Utils;
 
 
-class Dictionary extends AbstractRule
+class ManyToMany extends AbstractRule
 {
 	var $api_name = "";
-	var $class_name = "";
+	var $foreign_key = "";
+	var $join_key = "";
 	var $fromDatabase = null;
 	var $buildSearchQuery = null;
 	var $fields = null;
 	var $actions = ["actionSearch", "actionGetById"];
+	
+	
+	
+	/**
+	 * Get foreign ids
+	 */
+	function getForeignIds($action)
+	{
+		$result = [];
+		
+		if ($action == "actionSearch")
+		{
+			$result = array_map
+			(
+				function($item)
+				{
+					return isset($item[$this->foreign_key]) ?
+						$item[$this->foreign_key] : ""
+					;
+				},
+				$this->route->items
+			);
+		}
+		
+		return $result;
+	}
+	
 	
 	
 	/**
@@ -48,17 +76,24 @@ class Dictionary extends AbstractRule
 	function processAfter($action)
 	{
 		if ($this->api_name == null) return;
-		if ($this->class_name == null) return;
+		if ($this->foreign_key == null) return;
+		if ($this->join_key == null) return;
 		
 		if (in_array($action, $this->actions))
 		{
 			$result = [];
 			
+			/* Get foreign ids */
+			$foreign_ids = $this->getForeignIds($action);
+			
 			/* Get query */
-			$class_name = $this->class_name;
-			$query = $class_name::selectQuery();
 			if ($this->buildSearchQuery)
-				$query = call_user_func_array($this->buildSearchQuery, [$this, $action, $query]);
+			{
+				$query = call_user_func_array(
+					$this->buildSearchQuery,
+					[$this, $action, $foreign_ids]
+				);
+			}
 			
 			/* Get items */
 			$items = $query->all();
@@ -76,7 +111,23 @@ class Dictionary extends AbstractRule
 				$result[] = $item;
 			}
 			
+			/* Add dictionary */
 			$this->route->addDictionary($this->api_name, $result);
+			
+			/* Add result to items */
+			foreach ($this->route->items as $item)
+			{
+				$item_id = isset($item["id"]) ? $item["id"] : "";
+				$data = array_filter
+				(
+					$result,
+					function($item) use ($item_id)
+					{
+						return $item[$this->join_key] == $item_id;
+					},
+				);
+				$item[$this->api_name] = $data;
+			}
 		}
 		
 	}

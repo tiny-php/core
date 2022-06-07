@@ -500,22 +500,35 @@ class ApiCrudRoute extends ApiRoute
 	
 	
 	/**
+	 * Add dictionary
+	 */
+	public function addDictionary($name, $items)
+	{
+		if (!isset($this->api_result->result["dictionary"]))
+		{
+			$this->api_result->result["dictionary"] = [];
+		}
+		$this->api_result->result["dictionary"][$name] = $items;
+	}
+	
+	
+	
+	/**
 	 * Build search response
 	 */
 	function buildResponse($action)
 	{
 		if ($action == "actionSearch")
 		{
-			$result =
-			[
-				"items" => [],
-				"filter" => $this->filter,
-				"start" => (int)$this->start,
-				"limit" => (int)$this->limit,
-				"total" => (int)$this->total,
-				"pages" => (int)$this->pages,
-				"page" => (int)$this->page,
-			];
+			$result = $this->api_result->result;
+			
+			$result["items"] = [];
+			$result["filter"] = $this->filter;
+			$result["start"] = (int)$this->start;
+			$result["limit"] = (int)$this->limit;
+			$result["total"] = (int)$this->total;
+			$result["pages"] = (int)$this->pages;
+			$result["page"] = (int)$this->page;
 			
 			/* Set items */
 			foreach ($this->items as $item)
@@ -532,10 +545,8 @@ class ApiCrudRoute extends ApiRoute
 		{
 			$item = $this->fromDatabase($action, $this->item);
 			
-			$result =
-			[
-				"item" => $item,
-			];
+			$result = $this->api_result->result;
+			$result["item"] = $item;
 			
 			/* Set result */
 			$this->api_result->success( $result, "Ok" );
@@ -545,10 +556,8 @@ class ApiCrudRoute extends ApiRoute
 		{
 			$new_data = $this->fromDatabase($action, $this->new_data);
 			
-			$result =
-			[
-				"new_data" => $new_data,
-			];
+			$result = $this->api_result->result;
+			$result["new_data"] = $new_data;
 			
 			/* Set result */
 			$this->api_result->success( $result, "Ok" );
@@ -559,11 +568,9 @@ class ApiCrudRoute extends ApiRoute
 			$old_data = $this->fromDatabase($action, $this->old_data);
 			$new_data = $this->fromDatabase($action, $this->new_data);
 			
-			$result =
-			[
-				"old_data" => $old_data,
-				"new_data" => $new_data,
-			];
+			$result = $this->api_result->result;
+			$result["old_data"] = $old_data;
+			$result["new_data"] = $new_data;
 			
 			/* Set result */
 			$this->api_result->success( $result, "Ok" );
@@ -573,10 +580,8 @@ class ApiCrudRoute extends ApiRoute
 		{
 			$old_data = $this->fromDatabase($action, $this->old_data);
 			
-			$result =
-			[
-				"old_data" => $old_data,
-			];
+			$result = $this->api_result->result;
+			$result["old_data"] = $old_data;
 			
 			/* Set result */
 			$this->api_result->success( $result, "Ok" );
