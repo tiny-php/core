@@ -376,7 +376,7 @@ class ApiCrudRoute extends ApiRoute
 			throw new \Exception("Post item is empty");
 		}
 		
-		$this->update_data = $this->toDatabase($action, $update_data);
+		$this->update_data = $update_data;
 	}
 	
 	
@@ -439,7 +439,8 @@ class ApiCrudRoute extends ApiRoute
 		/* Set data */
 		if ($this->update_data != null)
 		{
-			foreach ($this->update_data as $key => $value)
+			$update_data = $this->toDatabase($action, $this->update_data);
+			foreach ($update_data as $key => $value)
 			{
 				$this->item->$key = $value;
 			}
@@ -468,7 +469,8 @@ class ApiCrudRoute extends ApiRoute
 		/* Set data */
 		if ($this->update_data != null)
 		{
-			foreach ($this->update_data as $key => $value)
+			$update_data = $this->toDatabase($action, $this->update_data);
+			foreach ($update_data as $key => $value)
 			{
 				$this->item->$key = $value;
 			}

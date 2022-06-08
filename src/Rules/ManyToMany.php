@@ -37,6 +37,7 @@ class ManyToMany extends AbstractRule
 	var $api_name = "";
 	var $foreign_key = "";
 	var $join_key = "";
+	var $second_key = "";
 	var $fromDatabase = null;
 	var $buildSearchQuery = null;
 	var $fields = null;
@@ -63,6 +64,11 @@ class ManyToMany extends AbstractRule
 				},
 				$this->route->items
 			);
+		}
+		
+		else if ($action == "actionEdit")
+		{
+			$result = [ $this->route->item->getFirstPk() ];
 		}
 		
 		return $result;
@@ -111,22 +117,104 @@ class ManyToMany extends AbstractRule
 				$result[] = $item;
 			}
 			
-			/* Add dictionary */
-			$this->route->addDictionary($this->api_name, $result);
-			
 			/* Add result to items */
-			foreach ($this->route->items as $item)
+			if ($action == "actionSearch")
 			{
-				$item_id = isset($item["id"]) ? $item["id"] : "";
-				$data = array_filter
-				(
-					$result,
-					function($item) use ($item_id)
+				/* Add dictionary */
+				$this->route->addDictionary($this->api_name, $result);
+				
+				foreach ($this->route->items as $item)
+				{
+					$item_id = isset($item["id"]) ? $item["id"] : "";
+					$data = array_filter
+					(
+						$result,
+						function($item) use ($item_id)
+						{
+							return $item[$this->join_key] == $item_id;
+						},
+					);
+					$item[$this->api_name] = $data;
+				}
+			}
+			
+			else if ($action == "actionEdit")
+			{
+				$update_data = isset($this->route->update_data[$this->api_name]) ?
+					$this->route->update_data[$this->api_name] : null;
+					
+				if ($update_data !== null)
+				{
+					$copy_result = $result;
+					$index = count($copy_result) - 1;
+					
+					/* Delete */
+					while ($index >= 0)
 					{
-						return $item[$this->join_key] == $item_id;
-					},
-				);
-				$item[$this->api_name] = $data;
+						$item = $copy_result[$index];
+						$item_second_key_id = $item[$this->second_key];
+						$find = false;
+						foreach ($update_data as $new_item)
+						{
+							$new_item_second_key_id = $new_item[$this->second_key];
+							if ($new_item_second_key_id == $item_second_key_id)
+							{
+								$find = true;
+								break;
+							}
+						}
+						if (!$find)
+						{
+							unset($result[$index]);
+							if ($this->deleteQuery)
+							{
+								$query = call_user_func_array(
+									$this->deleteQuery,
+									[$this, $action, $item]
+								);
+							}
+						}
+						$index--;
+					}
+					
+					/* Add */
+					$index = 0;
+					$count_update_data = count($update_data);
+					
+					while ($index < $count_update_data)
+					{
+						$new_item = $update_data[$index];
+						$new_item_second_key_id = $new_item[$this->second_key];
+						$find = false;
+						
+						foreach ($result as $item)
+						{
+							$item_second_key_id = $item[$this->second_key];
+							if ($new_item_second_key_id == $item_second_key_id)
+							{
+								$find = true;
+								break;
+							}
+						}
+						
+						if (!$find)
+						{
+							$result[] = $new_item;
+							if ($this->addQuery)
+							{
+								$query = call_user_func_array(
+									$this->addQuery,
+									[$this, $action, $new_item]
+								);
+							}
+						}
+						
+						$index++;
+					}
+					
+				}
+				
+				$this->route->new_data[$this->api_name] = $result;
 			}
 		}
 		
