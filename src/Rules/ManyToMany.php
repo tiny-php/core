@@ -134,6 +134,7 @@ class ManyToMany extends AbstractRule
 							return $item[$this->join_key] == $item_id;
 						},
 					);
+					$data = array_values($data);
 					$item[$this->api_name] = $data;
 				}
 			}
@@ -143,6 +144,8 @@ class ManyToMany extends AbstractRule
 				$update_data = isset($this->route->update_data[$this->api_name]) ?
 					$this->route->update_data[$this->api_name] : null;
 					
+				$update_data = array_values($update_data);
+				
 				if ($update_data !== null)
 				{
 					$copy_result = $result;
