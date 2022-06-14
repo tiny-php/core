@@ -5,7 +5,7 @@
  *
  *  MIT License
  *
- *  Copyright (c) 2020 - 2021 "Ildar Bikmamatov" <support@bayrell.org>
+ *  Copyright (c) 2020 - 2022 "Ildar Bikmamatov" <support@bayrell.org>
  * 
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
  *  of this software and associated documentation files (the "Software"), to deal
@@ -110,7 +110,9 @@ class Utils
 	{
 		return array_map
 		(
-			function ($model){ return ($model instanceof \TinyORM\Model) ? $model->toArray() : $model; },
+			function ($model){
+				return ($model instanceof \TinyORM\Model) ? $model->toArray() : $model;
+			},
 			$items
 		);
 	}
@@ -189,4 +191,30 @@ class Utils
 	}
 	
 	
+	
+	/**
+	 * Encode base64 url
+	 */
+	static function base64_encode_url($s)
+	{
+		$s = base64_encode($s);
+		$s = str_replace('+', '-', $s);
+		$s = str_replace('/', '_', $s);
+		$s = str_replace('=', '', $s);
+		return $s;
+	}
+	
+	
+	
+	/**
+	 * Decode base64 url
+	 */
+	static function base64_decode_url($s)
+	{
+		$c = 4 - strlen($s) % 4;
+		if ($c < 4 && $c > 0) $s .= str_repeat('=', $c);
+		$s = str_replace('-', '+', $s);
+		$s = str_replace('_', '/', $s);
+		return base64_decode($s);
+	}
 }
