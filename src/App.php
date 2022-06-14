@@ -175,7 +175,7 @@ class App
 		$this->add_modules();
 		
 		/* Add TinyPHP module */
-		$this->modules[] = \TinyPHP\Module::class;
+		$this->addModule(\TinyPHP\Module::class);
 		
 		/* Register modules hooks */
 		foreach ($this->modules as $module_class_name)
@@ -225,7 +225,10 @@ class App
 	 */
 	function addModule($module_class_name)
 	{
-		$this->modules[] = $module_class_name;
+		if (!in_array($module_class_name, $this->modules))
+		{
+			$this->modules[] = $module_class_name;
+		}
 	}
 	
 	

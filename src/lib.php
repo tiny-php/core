@@ -26,20 +26,32 @@
  *  SOFTWARE.
  */
 
- define ("CHAIN_BEFORE", -500);
- define ("CHAIN_AFTER", 500);
- define ("CHAIN_LAST", 1000);
- 
+define ("CHAIN_BEFORE", -500);
+define ("CHAIN_AFTER", 500);
+define ("CHAIN_LAST", 1000);
+
+define ("ERROR_OK", 1);
+define ("ERROR_FALSE", 0);
+define ("ERROR_UNKNOWN", -1);
+define ("ERROR_NO_AUTH", -2);
+define ("ERROR_WRONG_PERMISSION", -3);
+define ("ERROR_GATEWAY_API", -4);
+
+
+global $app;
+$app = null;
+
 
 /**
  * Create app instance
  */
-function create_app_instance()
+function create_app_instance($class_name = "")
 {
 	global $app;
 	if ($app == null)
 	{
-		$app = new App\Instance();
+		if ($class_name == "") $class_name = \TinyPHP\App::class;
+		$app = new $class_name();
 	}
 	return $app;
 }
@@ -63,8 +75,7 @@ function app($name = "")
  */
 function add_chain($chain_name, $class_name, $method_name, $priority = 0)
 {
-	global $app;
-	return $app->add_chain($chain_name, $class_name, $method_name, $priority);
+	return app()->add_chain($chain_name, $class_name, $method_name, $priority);
 }
 
 
@@ -74,8 +85,7 @@ function add_chain($chain_name, $class_name, $method_name, $priority = 0)
  */
 function call_chain($name = "", $params = [])
 {
-	global $app;
-	return $app->call_chain($name, $params);
+	return app()->call_chain($name, $params);
 }
 
 
@@ -84,8 +94,7 @@ function call_chain($name = "", $params = [])
  */
 function make($name, $params = [])
 {
-	global $app;
-	return $app->make($name, $params);
+	return app()->make($name, $params);
 }
 
 
@@ -95,8 +104,7 @@ function make($name, $params = [])
  */
 function env($key)
 {
-	global $app;
-	return $app->env($key);
+	return app()->env($key);
 }
 
 
@@ -106,7 +114,7 @@ function env($key)
  */
 function tiny_php_fatal_error($e)
 {
-	global $app;
+	$app = app();
 	
 	$error = make(\TinyPHP\FatalError::class);
 	if ($error && $app != null && $app->render_container != null)

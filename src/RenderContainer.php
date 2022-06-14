@@ -143,6 +143,16 @@ class RenderContainer
 	
 	
 	/**
+	 * Get request method
+	 */
+	public function getMethod()
+	{
+		return $this->request->getMethod();
+	}
+	
+	
+	
+	/**
 	 * Set response
 	 */
 	function setResponse(Response $response)

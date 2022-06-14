@@ -101,6 +101,36 @@ class Route
 	
 	
 	/**
+	 * Is post
+	 */
+	function isPost()
+	{
+		return $this->container->isPost();
+	}
+	
+	
+	
+	/**
+	 * Get request method
+	 */
+	public function getMethod()
+	{
+		return $this->container->getMethod();
+	}
+	
+	
+	
+	/**
+	 * Return request
+	 */
+	public function getRequest()
+	{
+		return $this->container->request;
+	}
+	
+	
+	 
+	/**
 	 * Render
 	 */
 	public function render($template, $data = null)
@@ -116,6 +146,16 @@ class Route
 	public function setContent($content)
 	{
 		$this->container->setContent($content);
+	}
+	
+	
+	
+	/**
+	 * Set context
+	 */
+	public function setContext($key, $value)
+	{
+		$this->container->setContext($key, $value);
 	}
 	
 	

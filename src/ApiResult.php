@@ -66,9 +66,10 @@ class ApiResult
 	/**
 	 * Error
 	 */
-	function error($error_str = "", $error_code = -1)
+	function error($result, $error_str = "", $error_code = -1)
 	{
 		$this->clearError();
+		$this->result = $result;
 		$this->error_str = $error_str;
 		$this->error_code = $error_code;
 		return $this;
@@ -104,7 +105,7 @@ class ApiResult
 	}
 
 
-
+	
 	/**
 	 * Exception
 	 */
