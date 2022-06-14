@@ -151,6 +151,16 @@ class Route
 	
 	
 	/**
+	 * Redirect
+	 */
+	public function redirect($url)
+	{
+		$this->container->redirect($url);
+	}
+	
+	
+	
+	/**
 	 * Set context
 	 */
 	public function setContext($key, $value)

@@ -38,16 +38,59 @@ use Symfony\Component\HttpFoundation\Response;
 class ApiResult
 {
 	var $result = null;
-	var $error = null;
+	var $exception = null;
 	var $error_code = 0;
 	var $error_name = "";
 	var $error_str = "";
 	var $error_file = "";
 	var $error_line = "";
 	var $error_trace = "";
+	var $api_response = null;
+	var $content = null;
 	var $status_code = Response::HTTP_OK;
 
-
+	
+	
+	/**
+	 * Set api response
+	 */
+	function setApiResponse($response)
+	{
+		$result = isset($response["result"]) ? $response["result"] : null;
+		$error = isset($response["error"]) ? $response["error"] : [];
+		$this->clearError();
+		$this->api_response = $response;
+		$this->result = $result;
+		$this->error_str = isset($error["str"]) ? $error["str"] : "";
+		$this->error_code = isset($error["code"]) ? $error["code"] : -1;
+		$this->error_name = isset($error["name"]) ? $error["name"] : -1;
+	}
+	
+	
+	
+	/**
+	 * Get error
+	 */
+	function getError()
+	{
+		return [
+			"str" => $this->error_str,
+			"code" => $this->error_code,
+			"name" => $this->error_name,
+		];
+	}
+	
+	
+	
+	/**
+	 * Is success
+	 */
+	function isSuccess()
+	{
+		return $this->error_code == 1;
+	}
+	
+	
 	
 	/**
 	 * Success
@@ -83,7 +126,7 @@ class ApiResult
 	function exception($e)
 	{
 		$this->clearError();
-		$this->error = $e;
+		$this->exception = $e;
 		$this->error_str = $e->getMessage();
 		$this->error_code = $e->getCode();
 		$this->error_name = str_replace("\\", ".", get_class($e));
@@ -95,7 +138,7 @@ class ApiResult
 			$this->error_code = -1;
 		}
 		
-		if (get_class($this->error) == "Error")
+		if (get_class($this->exception) == "Error")
 		{
 			$this->error_str = $e->getMessage() . " in " . $this->error_file .
 				" on line " . $this->error_line;

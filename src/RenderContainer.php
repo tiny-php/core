@@ -30,6 +30,7 @@ namespace TinyPHP;
 
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 
 
 class RenderContainer
@@ -46,7 +47,7 @@ class RenderContainer
 	var $base_url = "";
 	var $is_api = false;
 	var $error = false;
-	
+	var $setup_cookie = [];
 	
 	
 	/**
@@ -254,5 +255,15 @@ class RenderContainer
 			['content-type' => 'text/html']
 		);
 		return $this;
+	}
+	
+	
+	
+	/**
+	 * Redirect
+	 */
+	function redirect($url)
+	{
+		$this->response = new RedirectResponse($url);
 	}
 }
