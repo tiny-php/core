@@ -96,7 +96,7 @@ class JWT
 		$sign = Utils::base64_decode_url($sign);
 		if ($m == "rsa") $flag = RSA::verify($text, $sign, $key, $a);
 		else if ($m == "hash") $flag = HASH::verify($text, $sign, $key, $a);
-		return flag;
+		return $flag;
 	}
 	
 	
@@ -125,7 +125,7 @@ class JWT
 		$data_b64 = isset($arr[1]) ? $arr[1] : "";
 		$sign = isset($arr[2]) ? $arr[2] : "";
 		$head_json = base64_decode($head_b64);
-		$head = json_decode($head_json);
+		$head = json_decode($head_json, true);
 		if ($head == null) return null;
 		
 		$token_algo = isset($head["alg"]) ? $head["alg"] : "";
@@ -145,7 +145,7 @@ class JWT
 		/* Decode data */
 		$json = base64_decode($data_b64);
 		if ($json == "") return null;
-		$d = json_decode($json);
+		$d = json_decode($json, true);
 		return $d;
 	}
     
@@ -251,8 +251,8 @@ class JWT
 		$class_name = static::class;
 		$res = new $class_name();
 		
-		$key = $this->getPublicKey();
-		$type = $this->getType();
+		$key = $res->getPublicKey();
+		$type = $res->getType();
 		$data = static::decode($token_str, $key, $type);
 		
 		if ($data == null) return null;

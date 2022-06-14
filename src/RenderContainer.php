@@ -114,6 +114,21 @@ class RenderContainer
 	
 	
 	/**
+	 * Cookie
+	 */
+	function cookie($key = null, $value = "")
+	{
+		if (func_num_args() == 0)
+		{
+			return $this->request->cookies->all();
+		}
+		return $this->request->cookies->has($key) ?
+			$this->request->cookies->get($key) : $value;
+	}
+	
+	
+	
+	/**
 	 * Header
 	 */
 	function header($key, $value = "")
