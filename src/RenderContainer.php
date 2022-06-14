@@ -47,7 +47,7 @@ class RenderContainer
 	var $base_url = "";
 	var $is_api = false;
 	var $error = false;
-	var $setup_cookie = [];
+	var $new_cookie = [];
 	
 	
 	/**
@@ -59,6 +59,18 @@ class RenderContainer
 			"url" => $url,
 			"label" => $label,
 		];
+	}
+	
+	
+	
+	/**
+	 * Set cookie
+	 */
+	function setCookie($params)
+	{
+		$name = isset($params["name"]) ? $params["name"] : "";
+		if ($name == "") return;
+		$this->new_cookie[$name] = $params;
 	}
 	
 	
@@ -209,6 +221,24 @@ class RenderContainer
 	 */
 	function sendResponse()
 	{
+		/* Setup cookie */
+		foreach ($this->new_cookie as $params)
+		{
+			$name = isset($params["name"]) ? $params["name"] : "";
+			$value = isset($params["value"]) ? $params["value"] : "";
+			
+			if ($name == "") continue;
+			
+			$settings = [];
+			if (isset($params["path"])) $settings["path"] = $params["path"];
+			if (isset($params["domain"])) $settings["domain"] = $params["domain"];
+			if (isset($params["secure"])) $settings["secure"] = $params["secure"];
+			if (isset($params["httponly"])) $settings["httponly"] = $params["httponly"];
+			if (isset($params["expires"])) $settings["expires"] = $params["expires"];
+			
+			setcookie($name, $value, $settings);
+		}
+		
 		if ($this->response) $this->response->send();
 		else if ($this->error)
 		{

@@ -151,6 +151,16 @@ class Route
 	
 	
 	/**
+	 * Set cookie
+	 */
+	public function setCookie($params)
+	{
+		$this->container->setCookie($params);
+	}
+	
+	
+	
+	/**
 	 * Redirect
 	 */
 	public function redirect($url)
