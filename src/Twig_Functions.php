@@ -45,6 +45,20 @@ class Twig_Functions
 	
 	
 	/**
+	 * Implode
+	 */
+	static function implode($ch, $arr)
+	{
+		if (gettype($arr) == "array")
+		{
+			return implode($ch, $arr);
+		}
+		return "";
+	}
+	
+	
+	
+	/**
 	 * Output selected="selected"
 	 */
 	static function form_selected($value, $check_value)
@@ -52,6 +66,7 @@ class Twig_Functions
 		if ($value == $check_value) return "selected='selected'";
 		return "";
 	}
+	
 	
 	
 	/**
