@@ -78,4 +78,22 @@ class Twig_Functions
 		return "";
 	}
 	
+	
+	
+	/**
+	 * Url
+	 */
+	static function url($route_name, $params = [])
+	{
+		return url($route_name, $params);
+	}
+	
+	
+	/**
+	 * Url get add
+	 */
+	static function url_get_add($route_name, $params = [])
+	{
+		return url_get_add($route_name, $params);
+	}
 }
