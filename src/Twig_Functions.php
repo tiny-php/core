@@ -97,4 +97,24 @@ class Twig_Functions
 	{
 		return url_get_add($route_name, $params);
 	}
+	
+	
+	
+	/**
+	 * Json encode
+	 */
+	static function json_encode($value)
+	{
+		return json_encode($value);
+	}
+	
+	
+	
+	/**
+	 * Json decode
+	 */
+	static function json_decode($value)
+	{
+		return json_decode($value);
+	}
 }
