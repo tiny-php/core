@@ -85,7 +85,7 @@ class Twig_Functions
 	 */
 	static function url($route_name, $params = [])
 	{
-		return url($route_name, $params);
+		return Route::url($route_name, $params);
 	}
 	
 	
@@ -95,7 +95,7 @@ class Twig_Functions
 	 */
 	static function url_get_add($route_name, $params = [])
 	{
-		return url_get_add($route_name, $params);
+		return Route::url_get_add($route_name, $params);
 	}
 	
 	

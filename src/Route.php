@@ -193,9 +193,65 @@ class Route
 	/**
 	 * Make url
 	 */
-	function url($route_name, $params = [])
+	static function url($route_name, $params = [])
 	{
 		$app = app();
-		return $app->url($route_name, $params);
+		$url = $app->route_container->url($route_name, $params);
+		return $app->render_container->base_url . $url;
+	}
+	
+	
+	
+	/**
+	 * Url get add
+	 */
+	static function url_get_add($url, $params = [])
+	{
+		$url_arr = explode("?", $url);
+		$url = isset($url_arr[0]) ? $url_arr[0] : "";
+		$url_query = isset($url_arr[1]) ? $url_arr[1] : "";
+		
+		$url_query_arr_new = [];
+		$url_query_arr = explode("&", $url_query);
+		
+		foreach ($url_query_arr as $url_query_value)
+		{
+			$url_query_value_arr = explode("=", $url_query_value);
+			$query_key = isset($url_query_value_arr[0]) ? $url_query_value_arr[0] : "";
+			$query_value = isset($url_query_value_arr[1]) ? $url_query_value_arr[1] : null;
+			$url_query_arr_new[$query_key] = $query_value;
+		}
+		
+		foreach ($params as $key => $value)
+		{
+			$url_query_arr_new[$key] = $value;
+		}
+		
+		$url_query_arr_new = array_map
+		(
+			function($key, $value)
+			{
+				if ($value == "")
+				{
+					return null;
+				}
+				return $key . "=" . urlencode($value);
+			},
+			array_keys($url_query_arr_new),
+			array_values($url_query_arr_new)
+		);
+		
+		$url_query_arr_new = array_filter
+		(
+			$url_query_arr_new,
+			function($item)
+			{
+				return $item != null;
+			}
+		);
+		
+		$url_query = implode("&", $url_query_arr_new);
+		
+		return strlen($url_query) > 0 ? $url . "?" . $url_query : $url;
 	}
 }
