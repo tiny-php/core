@@ -101,26 +101,6 @@ class Route
 	
 	
 	/**
-	 * Is post
-	 */
-	function isPost()
-	{
-		return $this->container->isPost();
-	}
-	
-	
-	
-	/**
-	 * Get request method
-	 */
-	public function getMethod()
-	{
-		return $this->container->getMethod();
-	}
-	
-	
-	
-	/**
 	 * Return request
 	 */
 	public function getRequest()
@@ -151,16 +131,6 @@ class Route
 	
 	
 	/**
-	 * Set cookie
-	 */
-	public function setCookie($params)
-	{
-		$this->container->setCookie($params);
-	}
-	
-	
-	
-	/**
 	 * Redirect
 	 */
 	public function redirect($url)
@@ -181,23 +151,16 @@ class Route
 	
 	
 	/**
-	 * Add breadcrumb
-	 */
-	public function add_breadcrumb($name, $title)
-	{
-		$this->container->add_breadcrumb($name, $title);
-	}
-	
-	
-	
-	/**
 	 * Make url
 	 */
 	static function url($route_name, $params = [])
 	{
 		$app = app();
-		$url = $app->route_container->url($route_name, $params);
-		return $app->render_container->base_url . $url;
+		$route_container = app(\TinyPHP\RouteContainer::class);
+		$url = $route_container->url($route_name, $params);
+		$url = $app->render_container->base_url . $url;
+		$url = preg_replace("/\/+/", "/", $url);
+		return $url;
 	}
 	
 	

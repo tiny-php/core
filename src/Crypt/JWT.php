@@ -34,6 +34,18 @@ use TinyPHP\Utils;
 class JWT
 {
 	var $jwt;
+	var $is_valid;
+	
+	
+	/**
+	 * Token is valid
+	 */
+	function isValid()
+	{
+		return $this->is_valid;
+	}
+	
+	
 	
     /**
 	 * Returns method
@@ -118,35 +130,70 @@ class JWT
 	/**
 	 * Decode jwt
 	 */
-	static function decode($token_str, $key, $algo = "")
+	static function decode($token_str, $key, $algo = "", $check_sign = true)
 	{
 		$arr = explode(".", $token_str);
 		$head_b64 = isset($arr[0]) ? $arr[0] : "";
 		$data_b64 = isset($arr[1]) ? $arr[1] : "";
 		$sign = isset($arr[2]) ? $arr[2] : "";
+		
+		/* Decode head */
 		$head_json = base64_decode($head_b64);
 		$head = json_decode($head_json, true);
-		if ($head == null) return null;
-		
-		$token_algo = isset($head["alg"]) ? $head["alg"] : "";
-		if ($token_algo == "") return null;
-		if ($algo != "")
-		{
-			if ($token_algo != $algo)
-			{
-				return null;
-			}
-		}
-		
-		/* Validate sign */
-		$flag = static::validateSign($head_b64, $data_b64, $sign, $key, $token_algo);
-		if (!$flag) return null;
 		
 		/* Decode data */
 		$json = base64_decode($data_b64);
 		if ($json == "") return null;
-		$d = json_decode($json, true);
-		return $d;
+		$data = json_decode($json, true);
+		
+		if ($head == null)
+			return
+			[
+				"head" => null,
+				"data" => $data,
+				"valid" => false,
+			];
+		
+		$token_algo = isset($head["alg"]) ? $head["alg"] : "";
+		if ($token_algo == "")
+			return
+			[
+				"head" => $head,
+				"data" => $data,
+				"valid" => false,
+			];
+		
+		if ($token_algo != $algo && $algo != "")
+		{
+			return
+			[
+				"head" => $head,
+				"data" => $data,
+				"valid" => false,
+			];
+		}
+		
+		/* Validate sign */
+		if ($check_sign)
+		{
+			$flag = static::validateSign($head_b64, $data_b64, $sign, $key, $token_algo);
+			if ($flag)
+			{
+				return
+				[
+					"head" => $head,
+					"data" => $data,
+					"valid" => true,
+				];
+			}
+		}
+		
+		return
+		[
+			"head" => $head,
+			"data" => $data,
+			"valid" => false,
+		];
 	}
     
 	
@@ -246,19 +293,20 @@ class JWT
 	/**
 	 * Create jwt
 	 */
-	static function create($token_str)
+	static function create($token_str, $check_sign = true)
 	{
 		$class_name = static::class;
 		$res = new $class_name();
 		
 		$key = $res->getPublicKey();
 		$type = $res->getType();
-		$data = static::decode($token_str, $key, $type);
+		$decode = static::decode($token_str, $key, $type, $check_sign);
 		
-		if ($data == null) return null;
+		if ($decode["data"] == null) return null;
 		
 		$res->jwt = $token_str;
-		$res->setData($data);
+		$res->setData($decode["data"]);
+		$res->is_valid = $decode["valid"];
 		return $res;
 	}
 }

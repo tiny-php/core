@@ -40,7 +40,8 @@ class RenderContainer
 	var $request = null;
 	var $response = null;
 	var $handler = null;
-	var $args = null;
+	var $args = [];
+	var $data = [];
 	var $context = [ "global" => [], ];
 	var $route = null;
 	var $route_info = null;

@@ -40,7 +40,6 @@ class App
 	var $modules = [];
 	var $di_container = null;
 	var $render_container = null;
-	var $route_container = null;
 	
 	/* Errors */
 	const ERROR_OK = 1;
@@ -136,8 +135,9 @@ class App
 				return [
 				];
 			},
-
+			
 			/* Other classes */
+			\TinyPHP\Auth::class => \DI\create(\TinyPHP\Auth::class),
 			\TinyPHP\ApiResult::class => \DI\create(\TinyPHP\ApiResult::class),
 			\TinyPHP\RenderContainer::class => \DI\create(\TinyPHP\RenderContainer::class),
 			\TinyPHP\RouteContainer::class => \DI\create(\TinyPHP\RouteContainer::class),
@@ -323,53 +323,58 @@ class App
 			"request_before",
 			[
 				"container" => $render_container,
+				"render_container" => $render_container,
 			]
 		);
 		$render_container = $res->container;
 		
-		/* Route not found */
-		if ($route_info == null)
+		if ($render_container->response == null)
 		{
-			$render_container = $this->actionNotFound($render_container);
-		}
-		
-		/* Route found */
-		else
-		{
-			$method = $route_info["method"];
 			
-			if ($method instanceof \Closure)
+			/* Route not found */
+			if ($route_info == null)
 			{
-				$method($render_container);
+				$render_container = $this->actionNotFound($render_container);
 			}
-			else if (is_array( $method ))
+			
+			/* Route found */
+			else
 			{
-				$render_container->action = $method[1];
+				$method = $route_info["method"];
 				
-				$obj = $method[0];
-				if (is_object($obj) && $obj instanceof Route)
+				if ($method instanceof \Closure)
 				{
-					$render_container->route = $obj;
-					$obj->request_before($render_container);
-					if ($render_container->response == null)
+					$method($render_container);
+				}
+				else if (is_array( $method ))
+				{
+					$render_container->action = $method[1];
+					
+					$obj = $method[0];
+					if (is_object($obj) && $obj instanceof Route)
 					{
-						if (count($method) >= 2)
+						$render_container->route = $obj;
+						$obj->request_before($render_container);
+						if ($render_container->response == null)
 						{
-							if (!method_exists($method[0], $method[1]))
+							if (count($method) >= 2)
 							{
-								throw new \Exception("Method does not exist");
+								if (!method_exists($method[0], $method[1]))
+								{
+									throw new \Exception("Method does not exist");
+								}
 							}
+							call_user_func($method);
 						}
-						call_user_func($method);
+						$obj->request_after();
 					}
-					$obj->request_after();
+					else
+					{
+						call_user_func_array($method, [$render_container]);
+					}
 				}
-				else
-				{
-					call_user_func_array($method, [$render_container]);
-				}
+				
 			}
-			
 		}
 		
 		/* Request after */
@@ -426,7 +431,7 @@ class App
 	function runWebApp()
 	{
 		$this->render_container = $this->createRenderContainer();
-		$this->route_container = app(\TinyPHP\RouteContainer::class);
+		$route_container = app(\TinyPHP\RouteContainer::class);
 		
 		try
 		{
@@ -442,21 +447,20 @@ class App
 			
 			/* Add routes */
 			$routes_class_names = $this->getEntities(\TinyPHP\Route::class);
-			$this->route_container->addRoutesFromClass($routes_class_names);
+			$route_container->addRoutesFromClass($routes_class_names);
 			$res = $this->call_chain
 			(
 				"routes",
 				[
-					"route_container" => $this->route_container,
+					"route_container" => $route_container,
 					"render_container" => $this->render_container,
 					"container" => $this->render_container,
 				]
 			);
-			$this->route_container = $res["route_container"];
 			$this->render_container = $res["render_container"];
 			
 			/* Find route */
-			$this->render_container = $this->route_container->findRoute
+			$this->render_container = $route_container->findRoute
 			(
 				$this->render_container
 			);
@@ -464,7 +468,7 @@ class App
 			(
 				"find_route",
 				[
-					"route_container" => $this->route_container,
+					"route_container" => $route_container,
 					"render_container" => $this->render_container,
 					"container" => $this->render_container,
 				]
@@ -551,14 +555,4 @@ class App
 		$this->console->run();
 	}
 	
-	
-	
-	/**
-	 * Make url
-	 */
-	function url($route_name, $params = [])
-	{
-		$url = $this->route_container->url($route_name, $params);
-		return $this->render_container->base_url . $url;
-	}
 }
