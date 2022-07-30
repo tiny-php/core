@@ -143,7 +143,15 @@ class JWT
 		
 		/* Decode data */
 		$json = base64_decode($data_b64);
-		if ($json == "") return null;
+		if ($json == "")
+		{
+			return
+			[
+				"head" => null,
+				"data" => null,
+				"valid" => false,
+			];
+		}
 		$data = json_decode($json, true);
 		
 		if ($head == null)
@@ -174,25 +182,17 @@ class JWT
 		}
 		
 		/* Validate sign */
+		$valid = false;
 		if ($check_sign)
 		{
-			$flag = static::validateSign($head_b64, $data_b64, $sign, $key, $token_algo);
-			if ($flag)
-			{
-				return
-				[
-					"head" => $head,
-					"data" => $data,
-					"valid" => true,
-				];
-			}
+			$valid = static::validateSign($head_b64, $data_b64, $sign, $key, $token_algo);
 		}
 		
 		return
 		[
 			"head" => $head,
 			"data" => $data,
-			"valid" => false,
+			"valid" => $valid,
 		];
 	}
     
@@ -302,7 +302,7 @@ class JWT
 		$type = $res->getType();
 		$decode = static::decode($token_str, $key, $type, $check_sign);
 		
-		if ($decode["data"] == null) return null;
+		if ($decode && $decode["data"] == null) return null;
 		
 		$res->jwt = $token_str;
 		$res->setData($decode["data"]);
