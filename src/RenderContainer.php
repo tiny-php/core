@@ -293,13 +293,22 @@ class RenderContainer
 		$context["base_url"] = $this->base_url;
 		$context["container"] = $this;
 		
-		$content = $twig->render($template, $context);
-		$this->response = new Response
-		(
-			$content,
-			Response::HTTP_OK,
-			['content-type' => 'text/html']
-		);
+		$res = call_chain("render", [
+			"context" => $context,
+			"container" => $this,
+		]);
+		$context = $res["context"];
+		
+		if ($this->response == null)
+		{
+			$content = $twig->render($template, $context);
+			$this->response = new Response
+			(
+				$content,
+				Response::HTTP_OK,
+				['content-type' => 'text/html']
+			);
+		}
 		return $this;
 	}
 	
