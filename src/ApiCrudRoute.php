@@ -93,9 +93,9 @@ class ApiCrudRoute extends ApiRoute
 			
 			$route_container->addRoute([
 				"methods" => [ "POST" ],
-				"url" => "/api/" . $this->api_name . "/crud/edit/{id}/",
-				"name" => "api:" . $this->api_name . ":crud:edit",
-				"method" => [$this, "actionEdit"],
+				"url" => "/api/" . $this->api_name . "/crud/update/{id}/",
+				"name" => "api:" . $this->api_name . ":crud:update",
+				"method" => [$this, "actionUpdate"],
 			]);
 			
 			$route_container->addRoute([
@@ -390,7 +390,7 @@ class ApiCrudRoute extends ApiRoute
 		{
 		}
 		
-		else if ($action == "actionEdit")
+		else if ($action == "actionUpdate")
 		{
 		}
 		
@@ -462,9 +462,9 @@ class ApiCrudRoute extends ApiRoute
 	
 	
 	/**
-	 * Do edit
+	 * Do update
 	 */
-	function doEdit()
+	function doUpdate()
 	{
 		/* Set data */
 		if ($this->update_data != null)
@@ -476,7 +476,7 @@ class ApiCrudRoute extends ApiRoute
 			}
 		}
 		
-		$this->processItem( "actionEdit" );
+		$this->processItem( "actionUpdate" );
 		
 		/* Save and refresh */
 		$this->item->save();
@@ -486,7 +486,7 @@ class ApiCrudRoute extends ApiRoute
 		
 		$this->new_data = $this->item->toArray();
 		
-		$this->processAfter( "actionEdit" );
+		$this->processAfter( "actionUpdate" );
 	}
 	
 	
@@ -565,7 +565,7 @@ class ApiCrudRoute extends ApiRoute
 			$this->api_result->success( $result, "Ok" );
 		}
 		
-		else if ($action == "actionEdit")
+		else if ($action == "actionUpdate")
 		{
 			$old_data = $this->fromDatabase($action, $this->old_data);
 			$new_data = $this->fromDatabase($action, $this->new_data);
@@ -638,15 +638,15 @@ class ApiCrudRoute extends ApiRoute
 	
 	
 	/**
-	 * Action edit
+	 * Action update
 	 */
-	function actionEdit()
+	function actionUpdate()
 	{
-		$this->initUpdateData("actionEdit");
+		$this->initUpdateData("actionUpdate");
 		$this->findItem();
-		$this->validate("actionEdit");
-		$this->doEdit();
-		$this->buildResponse("actionEdit");
+		$this->validate("actionUpdate");
+		$this->doUpdate();
+		$this->buildResponse("actionUpdate");
 	}
 	
 	
