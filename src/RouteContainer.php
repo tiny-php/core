@@ -106,6 +106,10 @@ class RouteContainer
 		{
 			$route_info = $this->routes[$route_name];
 			$url = isset($route_info["url"]) ? $route_info["url"] : "";
+			foreach ($params as $key => $value)
+			{
+				$url = str_replace("{".$key."}", urlencode($value), $url);
+			}
 			return $url;
 		}
 		return "";

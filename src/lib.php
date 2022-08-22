@@ -94,7 +94,8 @@ function call_chain($name = "", $params = [])
  */
 function make($name, $params = [])
 {
-	return app()->make($name, $params);
+	$app = app();
+	return $app ? $app->make($name, $params) : null;
 }
 
 
@@ -104,7 +105,8 @@ function make($name, $params = [])
  */
 function env($key)
 {
-	return app()->env($key);
+	$app = app();
+	return $app ? $app->env($key) : getenv($key);
 }
 
 
@@ -133,14 +135,3 @@ function tiny_php_fatal_error($e)
 	}
 }
 set_exception_handler("tiny_php_fatal_error");
-
-
-/**
- * Make url
- */
-function url($route_name, $params = [])
-{
-	$app = app();
-	$url = $app->route_container->url($route_name, $params);
-	return $app->render_container->base_url . $url;
-}

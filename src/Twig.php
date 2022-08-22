@@ -44,6 +44,45 @@ class Twig
 	
 	
 	/**
+	 * Register path
+	 */
+	function registerTemplatePath($module_class)
+	{
+		$c = new \ReflectionClass($module_class);
+		$module_path = dirname($c->getFileName());
+		$module_name = "";
+		
+		/* Get module name */
+		if (method_exists($module_class, "twig_module_name"))
+		{
+			$module_name = $module_class::twig_module_name();
+		}
+		else
+		{
+			$arr = explode("\\", $module_class);
+			array_pop($arr);
+			$module_name = implode("_", $arr);
+			$module_name = strtolower($module_name);
+		}
+		
+		/* Call chain */
+		$res = call_chain("twig_module_name", [
+			"module_class" => $module_class,
+			"module_path" => $module_path,
+			"module_name" => $module_name,
+		]);
+		$module_name = $res["module_name"];
+		
+		$dir = $module_path . '/Templates';
+		if (is_dir($dir))
+		{
+			$this->twig_loader->addPath($module_path . '/Templates', $module_name);
+		}
+	}
+	
+	
+	
+	/**
 	 * Create twig
 	 */
 	function create()
@@ -76,56 +115,26 @@ class Twig
 		}
 		
 		$res = call_chain("twig_opt", ["twig_opt"=>$twig_opt]);
-		$twig_opt = $res->twig_opt;
+		$this->twig_opt = $res->twig_opt;
 		
 		/* Create twig loader */
-		$twig_loader = new \Twig\Loader\FilesystemLoader();
+		$this->twig_loader = new \Twig\Loader\FilesystemLoader();
 		
-		/* Add modules */
+		/* Register modules paths */
 		$app = app();
 		$modules = $app->modules;
 		
 		foreach ($modules as $module_class)
 		{
 			if (!class_exists($module_class)) continue;
-			
-			$c = new \ReflectionClass($module_class);
-			$module_path = dirname($c->getFileName());
-			$module_name = "";
-			
-			/* Get module name */
-			if (method_exists($module_class, "twig_module_name"))
-			{
-				$module_name = $module_class::twig_module_name();
-			}
-			else
-			{
-				$arr = explode("\\", $module_class);
-				array_pop($arr);
-				$module_name = implode("-", $arr);
-				$module_name = strtolower($module_name);
-			}
-			
-			/* Call chain */
-			$res = call_chain("twig_module_name", [
-				"module_class" => $module_class,
-				"module_path" => $module_path,
-				"module_name" => $module_name,
-			]);
-			$module_name = $res["module_name"];
-			
-			$dir = $module_path . '/Templates';
-			if (is_dir($dir))
-			{
-				$twig_loader->addPath($module_path . '/Templates', $module_name);
-			}
+			$this->registerTemplatePath($module_class);
 		}
 		
 		/* Create twig instance */
 		$this->twig = new \Twig\Environment
 		(
-			$twig_loader,
-			$twig_opt
+			$this->twig_loader,
+			$this->twig_opt
 		);
 		
 		/* Set strategy */
@@ -143,7 +152,9 @@ class Twig
 			'function', [$this, "call_php_function"]
 		) );
 		
-		call_chain("twig", ["twig"=>$this->twig, "obj"=>$this ]);
+		call_chain("twig", [
+			"twig"=>$this
+		]);
 		
 		return $this->twig;
 	}

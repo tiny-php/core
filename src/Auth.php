@@ -29,92 +29,56 @@
 namespace TinyPHP;
 
 
-class Twig_Functions
+class Auth
 {
+	protected $jwt = null;
+	protected $login = "";
+	protected $initialized = false;
+	
 	
 	/**
-	 * Dump
+	 * Check is auth
 	 */
-	static function dump($v)
+	function isAuth()
 	{
-		echo "<pre>";
-		var_dump($v);
-		echo "</pre>";
+		if (!$this->jwt) return false;
+		if (!$this->jwt->isValid()) return false;
+		if ($this->login == "") return false;
+		return true;
 	}
 	
 	
 	
 	/**
-	 * Implode
+	 * Return login name
 	 */
-	static function implode($ch, $arr)
+	function getLogin()
 	{
-		if (gettype($arr) == "array")
-		{
-			return implode($ch, $arr);
-		}
-		return "";
+		if (!$this->isAuth()) return "";
+		return $this->login;
 	}
 	
 	
 	
 	/**
-	 * Output selected="selected"
+	 * Check permission
 	 */
-	static function form_selected($value, $check_value)
+	function permission($name)
 	{
-		if ($value == $check_value) return "selected='selected'";
-		return "";
+		if (!$this->isAuth()) return false;
+		return false;
 	}
 	
 	
 	
 	/**
-	 * Output checked="checked"
+	 * Init auth
 	 */
-	static function form_checked($value, $check_value)
+	function init($params = [])
 	{
-		if ($value == $check_value) return "checked='checked'";
-		return "";
+		if ($this->initialized) return;
+		if (isset($params["jwt"])) $this->jwt = $params["jwt"];
+		$this->initialized = true;
 	}
 	
-	
-	
-	/**
-	 * Url
-	 */
-	static function url($route_name, $params = [])
-	{
-		return Route::url($route_name, $params);
-	}
-	
-	
-	
-	/**
-	 * Url get add
-	 */
-	static function url_get_add($route_name, $params = [])
-	{
-		return Route::url_get_add($route_name, $params);
-	}
-	
-	
-	
-	/**
-	 * Json encode
-	 */
-	static function json_encode($value)
-	{
-		return json_encode($value);
-	}
-	
-	
-	
-	/**
-	 * Json decode
-	 */
-	static function json_decode($value)
-	{
-		return json_decode($value);
-	}
 }

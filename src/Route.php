@@ -101,26 +101,6 @@ class Route
 	
 	
 	/**
-	 * Is post
-	 */
-	function isPost()
-	{
-		return $this->container->isPost();
-	}
-	
-	
-	
-	/**
-	 * Get request method
-	 */
-	public function getMethod()
-	{
-		return $this->container->getMethod();
-	}
-	
-	
-	
-	/**
 	 * Return request
 	 */
 	public function getRequest()
@@ -151,16 +131,6 @@ class Route
 	
 	
 	/**
-	 * Set cookie
-	 */
-	public function setCookie($params)
-	{
-		$this->container->setCookie($params);
-	}
-	
-	
-	
-	/**
 	 * Redirect
 	 */
 	public function redirect($url)
@@ -181,21 +151,70 @@ class Route
 	
 	
 	/**
-	 * Add breadcrumb
+	 * Make url
 	 */
-	public function add_breadcrumb($name, $title)
+	static function url($route_name, $params = [])
 	{
-		$this->container->add_breadcrumb($name, $title);
+		$app = app();
+		$route_container = app(\TinyPHP\RouteContainer::class);
+		$url = $route_container->url($route_name, $params);
+		$url = $app->render_container->base_url . $url;
+		$url = preg_replace("/\/+/", "/", $url);
+		return $url;
 	}
 	
 	
 	
 	/**
-	 * Make url
+	 * Url get add
 	 */
-	function url($route_name, $params = [])
+	static function url_get_add($url, $params = [])
 	{
-		$app = app();
-		return $app->url($route_name, $params);
+		$url_arr = explode("?", $url);
+		$url = isset($url_arr[0]) ? $url_arr[0] : "";
+		$url_query = isset($url_arr[1]) ? $url_arr[1] : "";
+		
+		$url_query_arr_new = [];
+		$url_query_arr = explode("&", $url_query);
+		
+		foreach ($url_query_arr as $url_query_value)
+		{
+			$url_query_value_arr = explode("=", $url_query_value);
+			$query_key = isset($url_query_value_arr[0]) ? $url_query_value_arr[0] : "";
+			$query_value = isset($url_query_value_arr[1]) ? $url_query_value_arr[1] : null;
+			$url_query_arr_new[$query_key] = $query_value;
+		}
+		
+		foreach ($params as $key => $value)
+		{
+			$url_query_arr_new[$key] = $value;
+		}
+		
+		$url_query_arr_new = array_map
+		(
+			function($key, $value)
+			{
+				if ($value == "")
+				{
+					return null;
+				}
+				return $key . "=" . urlencode($value);
+			},
+			array_keys($url_query_arr_new),
+			array_values($url_query_arr_new)
+		);
+		
+		$url_query_arr_new = array_filter
+		(
+			$url_query_arr_new,
+			function($item)
+			{
+				return $item != null;
+			}
+		);
+		
+		$url_query = implode("&", $url_query_arr_new);
+		
+		return strlen($url_query) > 0 ? $url . "?" . $url_query : $url;
 	}
 }

@@ -98,6 +98,7 @@ class Bus
 		
 		$result = new \TinyPHP\ApiResult();
 		$result->setApiResponse( $response );
+		$result->url = $url;
 		$result->content = $out;
 		$result->status_code = $code;
 		return $result;

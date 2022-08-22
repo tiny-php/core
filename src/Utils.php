@@ -67,6 +67,23 @@ class Utils
 	
 	
 	/**
+	 * Array find index
+	 */
+	static function array_find_index(&$arr, $f)
+	{
+		foreach ($arr as $index => $value)
+		{
+			if (call_user_func_array($f, [$value, $index]))
+			{
+				return $index;
+			}
+		}
+		return null;
+	}
+	
+	
+	
+	/**
 	 * Filter parse functions
 	 */
 	static function parseFilter($filter, $allow_filter_field_callback)
