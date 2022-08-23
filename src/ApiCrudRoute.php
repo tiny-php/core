@@ -458,6 +458,7 @@ class ApiCrudRoute extends ApiRoute
 			}
 		}
 		
+		/* Process before */
 		$this->processBefore( "actionCreate" );
 		
 		/* Save and refresh */
@@ -466,9 +467,11 @@ class ApiCrudRoute extends ApiRoute
 		/* Refresh item */
 		$this->refreshItem();
 		
-		$this->new_data = $this->item->toArray();
-		
+		/* Process after */
 		$this->processAfter( "actionCreate" );
+		
+		/* To array */
+		$this->new_data = $this->item->toArray();
 	}
 	
 	
@@ -488,6 +491,7 @@ class ApiCrudRoute extends ApiRoute
 			}
 		}
 		
+		/* Process before */
 		$this->processBefore( "actionUpdate" );
 		
 		/* Save and refresh */
@@ -496,9 +500,11 @@ class ApiCrudRoute extends ApiRoute
 		/* Refresh item */
 		$this->refreshItem();
 		
-		$this->new_data = $this->item->toArray();
-		
+		/* Process after */
 		$this->processAfter( "actionUpdate" );
+		
+		/* To array */
+		$this->new_data = $this->item->toArray();
 	}
 	
 	
@@ -516,13 +522,14 @@ class ApiCrudRoute extends ApiRoute
 	/**
 	 * Add dictionary
 	 */
-	public function addDictionary($name, $items)
+	public function addDictionary($api_name, $items)
 	{
+		if ($api_name == null) return;
 		if (!isset($this->api_result->result["dictionary"]))
 		{
 			$this->api_result->result["dictionary"] = [];
 		}
-		$this->api_result->result["dictionary"][$name] = $items;
+		$this->api_result->result["dictionary"][$api_name] = $items;
 	}
 	
 	

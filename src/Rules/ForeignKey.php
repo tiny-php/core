@@ -32,17 +32,19 @@ use TinyPHP\ApiCrudRoute;
 use TinyPHP\Utils;
 
 
-class ManyToMany extends AbstractRule
+class ForeignKey extends AbstractRule
 {
 	var $api_name = "";
+	var $class_name = "";
 	var $foreign_key = "";
 	var $join_key = "id";
 	var $second_key = "";
 	var $fromDatabase = null;
 	var $buildSearchQuery = null;
 	var $fields = null;
-	var $actions = ["actionSearch", "actionGetById"];
-	
+	var $actions = ["actionSearch", "actionGetById", "actionCreate", "actionUpdate"];
+	var $convert = null;
+	var $after = null;
 	
 	
 	/**
@@ -58,17 +60,24 @@ class ManyToMany extends AbstractRule
 			(
 				function($item)
 				{
-					return isset($item[$this->join_key]) ?
-						$item[$this->join_key] : ""
+					return isset($item[$this->foreign_key]) ?
+						$item[$this->foreign_key] : ""
 					;
 				},
 				$this->route->items
 			);
 		}
 		
-		else if ($action == "actionEdit")
+		else if (
+			$action == "actionGetById" ||
+			$action == "actionCreate" ||
+			$action == "actionUpdate"
+		)
 		{
-			$result = [ $this->route->item->getFirstPk() ];
+			if (isset($this->route->item[$this->foreign_key]))
+			{
+				$result = [ $this->route->item[$this->foreign_key] ];	
+			}
 		}
 		
 		return $result;
@@ -81,7 +90,6 @@ class ManyToMany extends AbstractRule
 	 */
 	function processAfter($action)
 	{
-		if ($this->api_name == null) return;
 		if ($this->foreign_key == null) return;
 		if ($this->join_key == null) return;
 		
@@ -100,8 +108,14 @@ class ManyToMany extends AbstractRule
 					[$this, $action, $foreign_ids]
 				);
 			}
+			else
+			{
+				$class_name = $this->class_name;
+				$query = $class_name::selectQuery();
+				$query->where($this->join_key, $foreign_ids);
+			}
 			
-			/* Get items */
+			/* Select from database */
 			$items = $query->all();
 			foreach ($items as $item)
 			{
@@ -123,102 +137,60 @@ class ManyToMany extends AbstractRule
 				/* Add dictionary */
 				$this->route->addDictionary($this->api_name, $result);
 				
-				foreach ($this->route->items as $item)
+				foreach ($this->route->items as $index => $item)
 				{
-					$item_id = isset($item["id"]) ? $item["id"] : "";
+					$item_id = isset($item[$this->foreign_key]) ?
+						$item[$this->foreign_key] : ""
+					;
 					$data = array_filter
 					(
 						$result,
-						function($item) use ($item_id)
+						function ($data_item) use ($item_id)
 						{
-							return $item[$this->foreign_key] == $item_id;
+							return $data_item[$this->join_key] == $item_id;
 						},
 					);
 					$data = array_values($data);
-					$item[$this->api_name] = $data;
+					
+					if ($this->convert)
+					{
+						$this->route->items[$index] = call_user_func_array(
+							$this->convert,
+							[$action, $item, $data, $index]
+						);
+					}
+					if ($this->after)
+					{
+						call_user_func_array(
+							$this->after,
+							[$action, $item, $data, $index]
+						);
+					}
 				}
 			}
 			
-			else if ($action == "actionEdit")
+			else if (
+				$action == "actionGetById" ||
+				$action == "actionCreate" ||
+				$action == "actionUpdate"
+			)
 			{
-				$update_data = isset($this->route->update_data[$this->api_name]) ?
-					$this->route->update_data[$this->api_name] : null;
-					
-				$update_data = array_values($update_data);
-				
-				if ($update_data !== null)
+				if ($this->convert)
 				{
-					$copy_result = $result;
-					$index = count($copy_result) - 1;
-					
-					/* Delete */
-					while ($index >= 0)
-					{
-						$item = $copy_result[$index];
-						$item_second_key_id = $item[$this->second_key];
-						$find = false;
-						foreach ($update_data as $new_item)
-						{
-							$new_item_second_key_id = $new_item[$this->second_key];
-							if ($new_item_second_key_id == $item_second_key_id)
-							{
-								$find = true;
-								break;
-							}
-						}
-						if (!$find)
-						{
-							unset($result[$index]);
-							if ($this->deleteQuery)
-							{
-								$query = call_user_func_array(
-									$this->deleteQuery,
-									[$this, $action, $item]
-								);
-							}
-						}
-						$index--;
-					}
-					
-					/* Add */
-					$index = 0;
-					$count_update_data = count($update_data);
-					
-					while ($index < $count_update_data)
-					{
-						$new_item = $update_data[$index];
-						$new_item_second_key_id = $new_item[$this->second_key];
-						$find = false;
-						
-						foreach ($result as $item)
-						{
-							$item_second_key_id = $item[$this->second_key];
-							if ($new_item_second_key_id == $item_second_key_id)
-							{
-								$find = true;
-								break;
-							}
-						}
-						
-						if (!$find)
-						{
-							$result[] = $new_item;
-							if ($this->addQuery)
-							{
-								$query = call_user_func_array(
-									$this->addQuery,
-									[$this, $action, $new_item]
-								);
-							}
-						}
-						
-						$index++;
-					}
-					
+					$this->route->item = call_user_func_array(
+						$this->convert,
+						[$action, $this->route->item, $result, -1]
+					);
 				}
-				
-				$this->route->new_data[$this->api_name] = $result;
+				if ($this->after)
+				{
+					call_user_func_array(
+						$this->after,
+						[$action, $this->route->item, $result, -1]
+					);
+				}
 			}
+			
 		}
 		
 	}

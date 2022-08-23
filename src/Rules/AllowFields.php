@@ -58,20 +58,5 @@ class AllowFields extends AbstractRule
 		$item = Utils::object_intersect($item, $this->fields);
 		return $item;
     }
-    
-	
-	
-	/**
-	 * Process item before query
-	 */
-	function processBefore($action)
-	{
-		if ($this->fields === null) return;
-		
-		//$this->
-		
-		//$item = Utils::object_intersect($item, $this->fields);
-		//return $item;
-	}
 	
 }
