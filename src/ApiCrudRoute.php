@@ -29,6 +29,7 @@
 namespace TinyPHP;
 
 use TinyORM\Model;
+use TinyPHP\Exception\ItemNotFoundException;
 
 
 class ApiCrudRoute extends ApiRoute
@@ -79,7 +80,7 @@ class ApiCrudRoute extends ApiRoute
 			]);
 			
 			$route_container->addRoute([
-				"url" => "/api/" . $this->api_name . "/crud/item/{id}/",
+				"url" => "/api/" . $this->api_name . "/crud/item/",
 				"name" => "api:" . $this->api_name . ":crud:getById",
 				"method" => [$this, "actionGetById"],
 			]);
@@ -93,14 +94,14 @@ class ApiCrudRoute extends ApiRoute
 			
 			$route_container->addRoute([
 				"methods" => [ "POST" ],
-				"url" => "/api/" . $this->api_name . "/crud/update/{id}/",
+				"url" => "/api/" . $this->api_name . "/crud/update/",
 				"name" => "api:" . $this->api_name . ":crud:update",
 				"method" => [$this, "actionUpdate"],
 			]);
 			
 			$route_container->addRoute([
-				"methods" => [ "DELETE" ],
-				"url" => "/api/" . $this->api_name . "/crud/delete/{id}/",
+				"methods" => [ "POST" ],
+				"url" => "/api/" . $this->api_name . "/crud/delete/",
 				"name" => "api:" . $this->api_name . ":delete",
 				"method" => [$this, "actionDelete"],
 			]);
@@ -246,17 +247,24 @@ class ApiCrudRoute extends ApiRoute
 	/**
 	 * Get item
 	 */
-	public function getItem($id)
+	public function getItem($data)
 	{
 		$class_name = $this->class_name;
 		
 		/* Get primary key */
-		$pk = $class_name::firstPk();
+		$pk = $class_name::getPrimaryData($data);
+		$pk = array_map(
+			function($key, $value)
+			{
+				return ["t.".$key, "=", $value];
+			},
+			array_keys($pk), array_values($pk)
+		);
 		
 		/* Get query */
 		$query = $class_name::selectQuery()
-			// ->debug(true)
-			->where("t.".$pk, "=", $id)
+			//->debug(true)
+			->where($pk)
 			->limit(1)
 		;
 		
@@ -274,8 +282,12 @@ class ApiCrudRoute extends ApiRoute
 	 */
 	public function findItem()
 	{
-		$id = $this->container->arg("id");
-		$this->item = $this->getItem($id);
+		$class_name = $this->class_name;
+		
+		$pk_data = [];
+		$pk_post = $this->container->post("pk");
+		
+		$this->item = $this->getItem($pk_post);
 		if ($this->item == null)
 		{
 			throw new ItemNotFoundException();
@@ -291,7 +303,7 @@ class ApiCrudRoute extends ApiRoute
 	 */
 	public function refreshItem()
 	{
-		$this->item = $this->getItem( $this->item->getFirstPk() );
+		$this->item = $this->getItem( $this->item->getPk() );
 	}
 	
 	
@@ -404,11 +416,11 @@ class ApiCrudRoute extends ApiRoute
 	/**
 	 * Process item before query
 	 */
-	function processItem($action)
+	function processBefore($action)
 	{
 		foreach ($this->rules as $rule)
 		{
-			$rule->processItem($action);
+			$rule->processBefore($action);
 		}
 	}
 	
@@ -446,7 +458,7 @@ class ApiCrudRoute extends ApiRoute
 			}
 		}
 		
-		$this->processItem( "actionCreate" );
+		$this->processBefore( "actionCreate" );
 		
 		/* Save and refresh */
 		$this->item->save();
@@ -476,7 +488,7 @@ class ApiCrudRoute extends ApiRoute
 			}
 		}
 		
-		$this->processItem( "actionUpdate" );
+		$this->processBefore( "actionUpdate" );
 		
 		/* Save and refresh */
 		$this->item->save();
@@ -656,7 +668,16 @@ class ApiCrudRoute extends ApiRoute
 	 */
 	function actionDelete()
 	{
-		$this->findItem();
+		try
+		{
+			$this->findItem();
+		}
+		catch (ItemNotFoundException $e)
+		{
+			$this->api_result->success( null, "Ok" );
+			return;
+		}
+		
 		$this->validate("actionDelete");
 		$this->doDelete();
 		$this->buildResponse("actionDelete");

@@ -68,7 +68,7 @@ class AbstractRule
 	/**
 	 * Process item before query
 	 */
-	function processItem($action)
+	function processBefore($action)
 	{
 	}
 	

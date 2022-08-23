@@ -64,7 +64,7 @@ class AllowFields extends AbstractRule
 	/**
 	 * Process item before query
 	 */
-	function processItem($action)
+	function processBefore($action)
 	{
 		if ($this->fields === null) return;
 		

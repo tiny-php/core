@@ -91,7 +91,7 @@ class RenderContainer
 	/**
 	 * Get
 	 */
-	function get($key, $value = "")
+	function get($key, $value = null)
 	{
 		return $this->request->query->has($key) ?
 			$this->request->query->get($key) : $value;
@@ -100,9 +100,19 @@ class RenderContainer
 	
 	
 	/**
+	 * Has get
+	 */
+	function hasGet($key = null)
+	{
+		return $this->request->query->has($key);
+	}
+	
+	
+	
+	/**
 	 * Post
 	 */
-	function post($key = null, $value = "")
+	function post($key = null, $value = null)
 	{
 		if (func_num_args() == 0)
 		{
@@ -115,9 +125,19 @@ class RenderContainer
 	
 	
 	/**
+	 * Has post
+	 */
+	function hasPost($key = null)
+	{
+		return $this->request->request->has($key);
+	}
+	
+	
+	
+	/**
 	 * Cookie
 	 */
-	function cookie($key = null, $value = "")
+	function cookie($key = null, $value = null)
 	{
 		if (func_num_args() == 0)
 		{
@@ -130,9 +150,19 @@ class RenderContainer
 	
 	
 	/**
+	 * Has cookies
+	 */
+	function hasCookie($key = null)
+	{
+		return $this->request->cookies->has($key);
+	}
+	
+	
+	
+	/**
 	 * Header
 	 */
-	function header($key, $value = "")
+	function header($key, $value = null)
 	{
 		return $this->request->headers->has($key) ?
 			$this->request->headers->get($key) : $value;
@@ -141,12 +171,32 @@ class RenderContainer
 	
 	
 	/**
+	 * Has header
+	 */
+	function hasHeader($key = null)
+	{
+		return $this->request->headers->has($key);
+	}
+	
+	
+	
+	/**
 	 * Server
 	 */
-	function server($key, $value = "")
+	function server($key, $value = null)
 	{
 		return $this->request->server->has($key) ?
 			$this->request->server->get($key) : $value;
+	}
+	
+	
+	
+	/**
+	 * Has server
+	 */
+	function hasServer($key = null)
+	{
+		return $this->request->server->has($key);
 	}
 	
 	
