@@ -67,7 +67,7 @@ class Dictionary extends AbstractRule
 				$item = $item->toArray();
 				if ($this->fromDatabase)
 				{
-					$item = $this->fromDatabase($item);
+					$item = call_user_func_array($this->fromDatabase, [$this, $action, $item]);
 				}
 				if ($this->fields)
 				{
