@@ -37,7 +37,7 @@ use Symfony\Component\HttpFoundation\Response;
  */
 class ApiResult
 {
-	var $result = null;
+	var $result = [];
 	var $exception = null;
 	var $error_code = 0;
 	var $error_name = "";
@@ -57,11 +57,10 @@ class ApiResult
 	 */
 	function setApiResponse($response)
 	{
-		$result = isset($response["result"]) ? $response["result"] : null;
 		$error = isset($response["error"]) ? $response["error"] : [];
 		$this->clearError();
 		$this->api_response = $response;
-		$this->result = $result;
+		if (isset($response["result"])) $this->result = $response["result"];
 		$this->error_str = isset($error["str"]) ? $error["str"] : "";
 		$this->error_code = isset($error["code"]) ? $error["code"] : -1;
 		$this->error_name = isset($error["name"]) ? $error["name"] : -1;

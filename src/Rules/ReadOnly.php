@@ -43,56 +43,21 @@ class ReadOnly extends AbstractRule
 	 */
 	function toDatabase($action, $item, $old_item)
 	{
-		if ($action == "actionCreate" &&
-			!$this->can_create && isset($item[$this->api_name]))
+		if ($action == "actionCreate")
 		{
-			unset($item[$this->api_name]);
+			if (!$this->can_create && isset($item[$this->api_name]))
+			{
+				unset($item[$this->api_name]);
+			}
 		}
-		else if ($action == "actionEdit" &&
-			!$this->can_update && isset($item[$this->api_name]))
+		else if ($action == "actionUpdate")
 		{
-			unset($item[$this->api_name]);
-		}
-		else
-		{
-			unset($item[$this->api_name]);
+			if (!$this->can_update && isset($item[$this->api_name]))
+			{
+				unset($item[$this->api_name]);
+			}
 		}
 		return $item;
-	}
-	
-	
-	
-	/**
-	 * Process item before query
-	 */
-	function processItemOld($action)
-	{
-		$item = $this->route->item;
-		$restore = false;
-		
-		if ($action == "actionCreate" &&
-			!$this->can_create &&
-			isset($item[$this->api_name])
-		)
-		{
-			$restore = true;
-		}
-		else if ($action == "actionEdit" &&
-			!$this->can_update &&
-			isset($item[$this->api_name])
-		)
-		{
-			$restore = true;
-		}
-		else
-		{
-			$restore = true;
-		}
-		
-		if ($restore)
-		{
-			$item->restoreField($this->api_name);
-		}
 	}
 	
 }
