@@ -45,14 +45,14 @@ class ReadOnly extends AbstractRule
 	{
 		if ($action == "actionCreate")
 		{
-			if (!$this->can_create && isset($item[$this->api_name]))
+			if (!$this->can_create && array_key_exists($this->api_name, $item))
 			{
 				unset($item[$this->api_name]);
 			}
 		}
 		else if ($action == "actionUpdate")
 		{
-			if (!$this->can_update && isset($item[$this->api_name]))
+			if (!$this->can_update && array_key_exists($this->api_name, $item))
 			{
 				unset($item[$this->api_name]);
 			}

@@ -451,7 +451,7 @@ class ApiCrudRoute extends ApiRoute
 		/* Set data */
 		if ($this->update_data != null)
 		{
-			$update_data = $this->toDatabase($action, $this->update_data);
+			$update_data = $this->toDatabase("actionCreate", $this->update_data);
 			foreach ($update_data as $key => $value)
 			{
 				$this->item->$key = $value;
@@ -484,7 +484,7 @@ class ApiCrudRoute extends ApiRoute
 		/* Set data */
 		if ($this->update_data != null)
 		{
-			$update_data = $this->toDatabase($action, $this->update_data);
+			$update_data = $this->toDatabase("actionUpdate", $this->update_data);
 			foreach ($update_data as $key => $value)
 			{
 				$this->item->$key = $value;
