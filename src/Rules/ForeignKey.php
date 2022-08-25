@@ -100,19 +100,18 @@ class ForeignKey extends AbstractRule
 			/* Get foreign ids */
 			$foreign_ids = $this->getForeignIds($action);
 			
+			/* Build query */
+			$class_name = $this->class_name;
+			$query = $class_name::selectQuery();
+			$query->where($this->join_key, $foreign_ids);
+				
 			/* Get query */
 			if ($this->buildSearchQuery)
 			{
 				$query = call_user_func_array(
 					$this->buildSearchQuery,
-					[$this, $action, $foreign_ids]
+					[$this, $action, $foreign_ids, $query]
 				);
-			}
-			else
-			{
-				$class_name = $this->class_name;
-				$query = $class_name::selectQuery();
-				$query->where($this->join_key, $foreign_ids);
 			}
 			
 			/* Select from database */
@@ -156,14 +155,7 @@ class ForeignKey extends AbstractRule
 					{
 						$this->route->items[$index] = call_user_func_array(
 							$this->convert,
-							[$action, $item, $data, $index]
-						);
-					}
-					if ($this->after)
-					{
-						call_user_func_array(
-							$this->after,
-							[$action, $item, $data, $index]
+							[$this, $action, $item, $data, $index]
 						);
 					}
 				}
@@ -179,14 +171,7 @@ class ForeignKey extends AbstractRule
 				{
 					$this->route->item = call_user_func_array(
 						$this->convert,
-						[$action, $this->route->item, $result, -1]
-					);
-				}
-				if ($this->after)
-				{
-					call_user_func_array(
-						$this->after,
-						[$action, $this->route->item, $result, -1]
+						[$this, $action, $this->route->item, $result, -1]
 					);
 				}
 			}

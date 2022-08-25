@@ -38,6 +38,7 @@ class Dictionary extends AbstractRule
 	var $class_name = "";
 	var $fromDatabase = null;
 	var $buildSearchQuery = null;
+	var $convert = null;
 	var $fields = null;
 	var $actions = ["actionSearch", "actionGetById"];
 	
@@ -58,7 +59,12 @@ class Dictionary extends AbstractRule
 			$class_name = $this->class_name;
 			$query = $class_name::selectQuery();
 			if ($this->buildSearchQuery)
-				$query = call_user_func_array($this->buildSearchQuery, [$this, $action, $query]);
+			{
+				$query = call_user_func_array(
+					$this->buildSearchQuery,
+					[$this, $action, $query]
+				);
+			}
 			
 			/* Get items */
 			$items = $query->all();
@@ -74,6 +80,14 @@ class Dictionary extends AbstractRule
 					$item = Utils::object_intersect($item, $this->fields);
 				}
 				$result[] = $item;
+			}
+			
+			if ($this->convert)
+			{
+				$result = call_user_func_array(
+					$this->convert,
+					[$this, $action, $result]
+				);
 			}
 			
 			$this->route->addDictionary($this->api_name, $result);
