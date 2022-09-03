@@ -189,6 +189,9 @@ class Utils
 	 */
 	static function attr($obj, $keys, $default_value = null)
 	{
+		if (!$obj) return $default_value;
+		if (gettype($obj) != "array") return $default_value;
+		
 		if (gettype($keys) != "array")
 		{
 			if (isset($obj[$keys])) return $obj[$keys];

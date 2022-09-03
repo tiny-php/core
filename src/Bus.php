@@ -100,6 +100,7 @@ class Bus
 		$result->setApiResponse( $response );
 		$result->url = $url;
 		$result->content = $out;
+		$result->debug = Utils::attr($response, "debug", "");
 		$result->status_code = $code;
 		return $result;
 	}
