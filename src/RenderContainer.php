@@ -287,6 +287,14 @@ class RenderContainer
 	 */
 	function sendResponse()
 	{
+		$ob_content = "";
+		if (ob_get_level() > 0)
+		{
+			$ob_content = ob_get_contents();
+			ob_end_clean();
+			ob_start();
+		}
+		
 		/* Setup cookie */
 		foreach ($this->new_cookie as $params)
 		{
@@ -305,7 +313,14 @@ class RenderContainer
 			setcookie($name, $value, $settings);
 		}
 		
-		if ($this->response) $this->response->send();
+		if ($this->response)
+		{
+			if ($ob_content)
+			{
+				$this->response->setContent( $ob_content . $this->response->getContent() );
+			}
+			$this->response->send();
+		}
 		else if ($this->error)
 		{
 			if ($this->error instanceof \TinyPHP\Exception\Http404Exception)

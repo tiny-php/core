@@ -40,11 +40,22 @@ class App
 	var $modules = [];
 	var $di_container = null;
 	var $render_container = null;
+	var $is_debug = false;
 	
 	/* Errors */
 	const ERROR_OK = 1;
 	const ERROR_UNKNOWN = -1;
 	const ERROR_ITEM_NOT_FOUND = -4;
+	
+	
+	/**
+	 * Is debug
+	 */
+	function isDebug()
+	{
+		return $this->is_debug;
+	}
+	
 	
 	
 	/**
@@ -72,7 +83,8 @@ class App
 	 */
 	function env($key)
 	{
-		return getenv($key);
+		$res = call_chain("env", ["key"=>$key, "value"=>getenv($key)]);
+		return $res->value;
 	}
 	
 	
@@ -430,13 +442,15 @@ class App
 	 */
 	function runWebApp()
 	{
+		ob_start();
+		
 		$this->render_container = $this->createRenderContainer();
 		$route_container = app(\TinyPHP\RouteContainer::class);
 		
 		try
 		{
 			/* Get base url */
-			$res = call_chain("base_url", [
+			$res = call_chain("get_base_url", [
 				"base_url" => "",
 				"request" => $this->render_container->request
 			]);
@@ -523,6 +537,11 @@ class App
 		
 		/* Send response */
 		$this->render_container->sendResponse();
+		
+		while (ob_get_level() != 0)
+		{
+			ob_end_clean();
+		}
 	}
 	
 	

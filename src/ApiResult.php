@@ -180,9 +180,18 @@ class ApiResult
 	 */
 	function getResponse()
 	{
+		$ob_content = "";
+		if (ob_get_level() > 0)
+		{
+			$ob_content = ob_get_contents();
+			ob_end_clean();
+			ob_start();
+		}
+		
 		$res =
 		[
 			"result" => $this->result,
+			"debug" => $ob_content,
 			"error" =>
 			[
 				"code" => $this->error_code,
