@@ -47,6 +47,7 @@ class ApiResult
 	var $error_trace = "";
 	var $api_response = null;
 	var $url = null;
+	var $debug = null;
 	var $content = null;
 	var $status_code = Response::HTTP_OK;
 
