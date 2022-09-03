@@ -38,11 +38,12 @@ class Bus
 	static function curl($url, $data)
 	{
 		$time = time();
-		$key = env("CLOUD_OS_KEY");
+		$bus_key_name = app()->def("bus_key");
+		$bus_key_value = env( $bus_key_name );
 		$arr = array_keys($data); sort($arr);
 		array_unshift($arr, $time);
 		$text = implode("|", $arr);
-		$sign = hash_hmac("SHA512", $text, $key);
+		$sign = hash_hmac("SHA512", $text, $bus_key_value);
 		
 		$curl = curl_init();
 		curl_setopt($curl, CURLOPT_URL, $url);
@@ -71,9 +72,9 @@ class Bus
 		
 		return [$code, $out];
 	}
-
-
-
+	
+	
+	
 	/**
 	 * Send api request
 	 */

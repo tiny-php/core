@@ -38,9 +38,9 @@ class App
 	var $chains = [];
 	var $entities = [];
 	var $modules = [];
-	var $di_container = null;
+	protected $defs = [];
+	protected $di_container = null;
 	var $render_container = null;
-	var $is_debug = false;
 	
 	/* Errors */
 	const ERROR_OK = 1;
@@ -53,7 +53,7 @@ class App
 	 */
 	function isDebug()
 	{
-		return $this->is_debug;
+		return APP_DEBUG;
 	}
 	
 	
@@ -85,6 +85,16 @@ class App
 	{
 		$res = call_chain("env", ["key"=>$key, "value"=>getenv($key)]);
 		return $res->value;
+	}
+	
+	
+	
+	/**
+	 * Returns enviroment variable
+	 */
+	function def($key)
+	{
+		return isset($this->defs[$key]) ? $this->defs[$key] : "";
 	}
 	
 	
@@ -174,6 +184,7 @@ class App
 		$container_builder = new \DI\ContainerBuilder();
 		$container_builder->addDefinitions($defs);
 		$this->di_container = $container_builder->build();
+		$this->defs = $defs;
 	}
 	
 	
