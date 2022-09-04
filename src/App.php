@@ -38,9 +38,12 @@ class App
 	var $chains = [];
 	var $entities = [];
 	var $modules = [];
+	var $route_list = null;
+	var $render_container = null;
+	var $ob_start_level = 0;
+	
 	protected $defs = [];
 	protected $di_container = null;
-	var $render_container = null;
 	
 	/* Errors */
 	const ERROR_OK = 1;
@@ -161,7 +164,7 @@ class App
 			\TinyPHP\Auth::class => \DI\create(\TinyPHP\Auth::class),
 			\TinyPHP\ApiResult::class => \DI\create(\TinyPHP\ApiResult::class),
 			\TinyPHP\RenderContainer::class => \DI\create(\TinyPHP\RenderContainer::class),
-			\TinyPHP\RouteContainer::class => \DI\create(\TinyPHP\RouteContainer::class),
+			\TinyPHP\RouteList::class => \DI\create(\TinyPHP\RouteList::class),
 			\TinyPHP\FatalError::class => \DI\create(\TinyPHP\FatalError::class),
 			\TinyPHP\Crypt\JWT::class => \DI\create(\TinyPHP\Crypt\JWT::class),
 		];
@@ -353,7 +356,6 @@ class App
 		
 		if ($render_container->response == null)
 		{
-			
 			/* Route not found */
 			if ($route_info == null)
 			{
@@ -453,11 +455,11 @@ class App
 	 */
 	function runWebApp()
 	{
-		$start_level = ob_get_level();
+		$this->ob_start_level = ob_get_level();
 		ob_start();
 		
 		$this->render_container = $this->createRenderContainer();
-		$route_container = app(\TinyPHP\RouteContainer::class);
+		$this->route_list = app(\TinyPHP\RouteList::class);
 		
 		try
 		{
@@ -473,20 +475,19 @@ class App
 			
 			/* Add routes */
 			$routes_class_names = $this->getEntities(\TinyPHP\Route::class);
-			$route_container->addRoutesFromClass($routes_class_names);
+			$this->route_list->addRoutesFromClass($routes_class_names);
 			$res = $this->call_chain
 			(
 				"routes",
 				[
-					"route_container" => $route_container,
-					"render_container" => $this->render_container,
+					"route_list" => $this->route_list,
 					"container" => $this->render_container,
 				]
 			);
-			$this->render_container = $res["render_container"];
+			$this->render_container = $res["container"];
 			
 			/* Find route */
-			$this->render_container = $route_container->findRoute
+			$this->render_container = $this->route_list->findRoute
 			(
 				$this->render_container
 			);
@@ -494,12 +495,11 @@ class App
 			(
 				"find_route",
 				[
-					"route_container" => $route_container,
-					"render_container" => $this->render_container,
+					"route_list" => $this->route_list,
 					"container" => $this->render_container,
 				]
 			);
-			$this->render_container = $res["render_container"];
+			$this->render_container = $res["container"];
 			
 			/* Setup global context */
 			$this->render_container->context["global"]["route_info"] =
@@ -542,15 +542,15 @@ class App
 		(
 			"before_response",
 			[
-				"render_container" => $this->render_container
+				"container" => $this->render_container
 			]
 		);
-		$this->render_container = $res["render_container"];
+		$this->container = $res["container"];
 		
 		/* Send response */
 		$this->render_container->sendResponse();
 		
-		while (ob_get_level() > $start_level)
+		while (ob_get_level() > $this->ob_start_level)
 		{
 			ob_end_flush();
 		}

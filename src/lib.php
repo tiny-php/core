@@ -134,9 +134,9 @@ function tiny_php_fatal_error($e)
 		$container = $app->render_container;
 		$container->response = $error->handle_error($e, $container);
 		$res = $app->call_chain("before_response", [
-			"render_container" => $container
+			"container" => $container
 		]);
-		$res->render_container->sendResponse();
+		$res->container->sendResponse();
 	}
 	else
 	{

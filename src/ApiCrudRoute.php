@@ -69,37 +69,37 @@ class ApiCrudRoute extends ApiRoute
 	/**
 	 * Declare routes
 	 */
-	function routes(RouteContainer $route_container)
+	function routes(RouteList $routes)
 	{
 		if ($this->api_name != "")
 		{
-			$route_container->addRoute([
+			$routes->addRoute([
 				"url" => "/api/" . $this->api_name . "/crud/search/",
 				"name" => "api:" . $this->api_name . ":crud:search",
 				"method" => [$this, "actionSearch"],
 			]);
 			
-			$route_container->addRoute([
+			$routes->addRoute([
 				"url" => "/api/" . $this->api_name . "/crud/item/",
 				"name" => "api:" . $this->api_name . ":crud:getById",
 				"method" => [$this, "actionGetById"],
 			]);
 			
-			$route_container->addRoute([
+			$routes->addRoute([
 				"methods" => [ "POST" ],
 				"url" => "/api/" . $this->api_name . "/crud/create/",
 				"name" => "api:" . $this->api_name . ":crud:create",
 				"method" => [$this, "actionCreate"],
 			]);
 			
-			$route_container->addRoute([
+			$routes->addRoute([
 				"methods" => [ "POST" ],
 				"url" => "/api/" . $this->api_name . "/crud/update/",
 				"name" => "api:" . $this->api_name . ":crud:update",
 				"method" => [$this, "actionUpdate"],
 			]);
 			
-			$route_container->addRoute([
+			$routes->addRoute([
 				"methods" => [ "POST" ],
 				"url" => "/api/" . $this->api_name . "/crud/delete/",
 				"name" => "api:" . $this->api_name . ":delete",
