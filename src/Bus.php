@@ -38,12 +38,11 @@ class Bus
 	static function curl($url, $data)
 	{
 		$time = time();
-		$bus_key_name = app()->settings("bus_env_key");
-		$bus_key_value = env( $bus_key_name );
+		$bus_key = app()->settings("bus_key");
 		$arr = array_keys($data); sort($arr);
 		array_unshift($arr, $time);
 		$text = implode("|", $arr);
-		$sign = hash_hmac("SHA512", $text, $bus_key_value);
+		$sign = hash_hmac("SHA512", $text, $bus_key);
 		
 		$curl = curl_init();
 		curl_setopt($curl, CURLOPT_URL, $url);

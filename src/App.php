@@ -154,7 +154,7 @@ class App
 			/* App settings */
 			"settings" => [
 				"jwt_cookie_key" => "",
-				"bus_env_key" => "",
+				"bus_key" => "",
 			],
 			
 			/* Other classes */
