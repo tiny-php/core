@@ -44,6 +44,7 @@ class Module
 	static function register_hooks()
 	{
 		add_chain("request_before", static::class, "init_auth");
+		add_chain("before_response", static::class, "add_ob_content");
 	}
 	
 	
@@ -79,4 +80,38 @@ class Module
 		$res->container->setContext("jwt", $jwt);
 	}
 	
+	
+	/**
+	 * Add
+	 */
+	static function add_ob_content($res)
+	{
+		$ob_content = "";
+		if (ob_get_level() > 0)
+		{
+			$ob_content = ob_get_contents();
+			ob_end_clean();
+			ob_start();
+		}
+		
+		if ($res->container->response && $ob_content != "")
+		{
+			if ($res->container->isApi())
+			{
+				$json = $res->container->response->getContent();
+				$json = @json_decode($json);
+				if ($json)
+				{
+					$json["ob_content"] = $ob_content;
+					$res->container->response->setContent( json_encode($json) . "\n" );
+				}
+			}
+			else
+			{
+				$res->container->response->setContent(
+					$ob_content . $res->container->response->getContent()
+				);
+			}
+		}
+	}
 }

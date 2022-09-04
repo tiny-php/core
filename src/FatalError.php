@@ -34,8 +34,10 @@ use Symfony\Component\HttpFoundation\Response;
 
 class FatalError
 {
-	
-	function handle_error($e, $container)
+	/**
+	 * Handle api error
+	 */
+	function handle_error_api($e, $container)
 	{
 		$http_code = Response::HTTP_INTERNAL_SERVER_ERROR;
 		if (property_exists($e, "http_code"))
@@ -43,6 +45,46 @@ class FatalError
 			$http_code = $e->http_code;
 		}
 		
+		$response = make(ApiResult::class)
+			->exception($e)
+			->getResponse()
+			->setStatusCode($http_code)
+		;
+		return $response;
+	}
+	
+	
+	
+	/**
+	 * Handle 404 error
+	 */
+	function handle_error_404($e, $container)
+	{
+		return new Response
+		(
+			$e->getMessage(),
+			404,
+			['content-type' => 'text/html']
+		);
+	}
+	
+	
+	
+	/**
+	 * Handle 502 error
+	 */
+	function handle_error_502($e, $container)
+	{
+		throw $e;
+	}
+	
+	
+	
+	/**
+	 * Handle error
+	 */
+	function handle_error($e, $container)
+	{
 		$res = call_chain("fatal_error", [
 			"e"=>$e,
 			"container"=>$container,
@@ -55,17 +97,16 @@ class FatalError
 		
 		if ($container->isApi())
 		{
-			$response = make(ApiResult::class)
-				->exception($e)
-				->getResponse()
-				->setStatusCode($http_code)
-			;
-			return $response;
+			return $this->handle_error_api($e, $container);
 		}
 		else
 		{
-			$container->error = $e;
-			return null;
+			if ($e instanceof \TinyPHP\Exception\Http404Exception)
+			{
+				return $this->handle_error_404($e, $container);
+			}
+			
+			return $this->handle_error_502($e, $container);
 		}
 	}
 	

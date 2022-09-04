@@ -47,7 +47,6 @@ class RenderContainer
 	var $route_info = null;
 	var $base_url = "";
 	var $is_api = false;
-	var $error = false;
 	var $new_cookie = [];
 	
 	
@@ -287,14 +286,6 @@ class RenderContainer
 	 */
 	function sendResponse()
 	{
-		$ob_content = "";
-		if (ob_get_level() > 1)
-		{
-			$ob_content = ob_get_contents();
-			ob_end_clean();
-			ob_start();
-		}
-		
 		/* Setup cookie */
 		foreach ($this->new_cookie as $params)
 		{
@@ -315,33 +306,7 @@ class RenderContainer
 		
 		if ($this->response)
 		{
-			if ($ob_content)
-			{
-				$this->response->setContent( $ob_content . $this->response->getContent() );
-			}
 			$this->response->send();
-		}
-		else if ($this->error)
-		{
-			if ($this->error instanceof \TinyPHP\Exception\Http404Exception)
-			{
-				http_response_code(404);
-				echo $this->error->getMessage();
-			}
-			else
-			{
-				$http_code = 502;
-				if (property_exists($this->error, "http_code"))
-				{
-					$http_code = $this->error->http_code;
-				}
-				http_response_code($http_code);
-				throw $this->error;
-			}
-		}
-		else
-		{
-			echo $ob_content;
 		}
 	}
 	
