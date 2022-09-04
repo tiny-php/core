@@ -386,7 +386,8 @@ class App
 							{
 								if (!method_exists($method[0], $method[1]))
 								{
-									throw new \Exception("Method does not exist");
+									throw new \Exception("Method '" .
+										get_class($method[0]) . "::" . $method[1] . "' does not exist");
 								}
 							}
 							call_user_func($method);

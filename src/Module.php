@@ -28,6 +28,9 @@
 
 namespace TinyPHP;
 
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+
 
 class Module
 {
@@ -44,7 +47,8 @@ class Module
 	static function register_hooks()
 	{
 		add_chain("request_before", static::class, "init_auth");
-		add_chain("before_response", static::class, "add_ob_content");
+		add_chain("before_response", static::class, "create_response_if_does_not_exists", CHAIN_LAST - 1);
+		add_chain("before_response", static::class, "add_ob_content", CHAIN_LAST);
 	}
 	
 	
@@ -81,8 +85,27 @@ class Module
 	}
 	
 	
+	
 	/**
-	 * Add
+	 * Create response if does not exists
+	 */
+	static function create_response_if_does_not_exists($res)
+	{
+		if ($res->container->response == null)
+		{
+			$res->container->response = new Response
+			(
+				"",
+				200,
+				['content-type' => 'text/html']
+			);
+		}
+	}
+	
+	
+	
+	/**
+	 * Add ob content
 	 */
 	static function add_ob_content($res)
 	{
