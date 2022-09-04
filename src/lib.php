@@ -59,13 +59,23 @@ function create_app_instance($class_name = "")
 
 
 /**
- * Get instance
+ * Get app instance
  */
 function app($name = "")
 {
 	global $app;
 	if ($name == "") return $app;
 	return $app->get($name);
+}
+
+
+
+/**
+ * Get auth instance
+ */
+function auth()
+{
+	return app(\TinyPHP\Auth::class);
 }
 
 
