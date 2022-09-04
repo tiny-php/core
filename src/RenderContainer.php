@@ -288,7 +288,7 @@ class RenderContainer
 	function sendResponse()
 	{
 		$ob_content = "";
-		if (ob_get_level() > 0)
+		if (ob_get_level() > 1)
 		{
 			$ob_content = ob_get_contents();
 			ob_end_clean();
@@ -304,7 +304,7 @@ class RenderContainer
 			if ($name == "") continue;
 			
 			$settings = [];
-			if (isset($params["path"])) $settings["path"] = $params["path"];
+			$settings["path"] = isset($params["path"]) ? $params["path"] : "/";
 			if (isset($params["domain"])) $settings["domain"] = $params["domain"];
 			if (isset($params["secure"])) $settings["secure"] = $params["secure"];
 			if (isset($params["httponly"])) $settings["httponly"] = $params["httponly"];
@@ -338,6 +338,10 @@ class RenderContainer
 				http_response_code($http_code);
 				throw $this->error;
 			}
+		}
+		else
+		{
+			echo $ob_content;
 		}
 	}
 	

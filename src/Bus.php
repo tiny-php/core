@@ -38,7 +38,7 @@ class Bus
 	static function curl($url, $data)
 	{
 		$time = time();
-		$bus_key_name = app()->def("bus_key");
+		$bus_key_name = app()->settings("bus_env_key");
 		$bus_key_value = env( $bus_key_name );
 		$arr = array_keys($data); sort($arr);
 		array_unshift($arr, $time);
@@ -100,8 +100,12 @@ class Bus
 		$result = new \TinyPHP\ApiResult();
 		$result->setApiResponse( $response );
 		$result->url = $url;
-		$result->content = $out;
-		$result->debug = Utils::attr($response, "debug", "");
+		$result->res_content = $out;
+		$result->ob_content = Utils::attr($response, "ob_content", "");
+		if ($result->ob_content == "")
+		{
+			$result->ob_content = Utils::attr($response, "debug", "");
+		}
 		$result->status_code = $code;
 		return $result;
 	}

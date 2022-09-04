@@ -32,7 +32,6 @@ namespace TinyPHP;
 class Auth
 {
 	protected $jwt = null;
-	protected $login = "";
 	protected $initialized = false;
 	
 	
@@ -43,19 +42,7 @@ class Auth
 	{
 		if (!$this->jwt) return false;
 		if (!$this->jwt->isValid()) return false;
-		if ($this->login == "") return false;
 		return true;
-	}
-	
-	
-	
-	/**
-	 * Return login name
-	 */
-	function getLogin()
-	{
-		if (!$this->isAuth()) return "";
-		return $this->login;
 	}
 	
 	
@@ -81,4 +68,37 @@ class Auth
 		$this->initialized = true;
 	}
 	
+	
+	
+	/**
+	 * Returns JWT
+	 */
+	function getJWT()
+	{
+		return $this->jwt;
+	}
+	
+	
+	
+	/**
+	 * Returns JWT string
+	 */
+	function getJWTString()
+	{
+		return $this->jwt ? $this->jwt->getJWT() : "";
+	}
+	
+	
+	
+	/**
+	 * Call args
+	 */
+	public function __call($name, $arguments)
+	{
+		if ($this->jwt)
+		{
+			return call_user_func_array([$this->jwt, $name], $arguments);
+		}
+		return null;
+    }
 }

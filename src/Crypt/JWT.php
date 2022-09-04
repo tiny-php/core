@@ -28,13 +28,34 @@
 
 namespace TinyPHP\Crypt;
 
-use TinyPHP\Utils;
 
-
-class JWT
+class JWT extends \TinyPHP\Crypt\JWTCore
 {
-	var $jwt;
-	var $is_valid;
+	
+	protected $login = "";
+	protected $expires = 0;
+	
+	
+	/**
+	 * Returns login
+	 */
+	function getLogin()
+	{
+		if (!$this->isValid()) return "";
+		return $this->login;
+	}
+	
+	
+	
+	/**
+	 * Returns expires
+	 */
+	function getExpires()
+	{
+		if (!$this->isValid()) return false;
+		return $this->expires;
+	}
+	
 	
 	
 	/**
@@ -42,160 +63,11 @@ class JWT
 	 */
 	function isValid()
 	{
-		return $this->is_valid;
+		if ($this->login == "") return false;
+		if ($this->expires < time()) return false;
+		return parent::isValid();
 	}
 	
-	
-	
-    /**
-	 * Returns method
-	 */
-	static function getMethod($algo)
-	{
-		if ($algo == 'HS256') return "hash";
-		if ($algo == 'HS384') return "hash";
-		if ($algo == 'HS512') return "hash";
-		if ($algo == 'RS256') return "rsa";
-		if ($algo == 'RS384') return "rsa";
-		if ($algo == 'RS512') return "rsa";
-		return "";
-	}
-	
-	
-	
-	/**
-	 * Returns method
-	 */
-	static function getAlgo($algo)
-	{
-		if ($algo == 'HS256') return "SHA256";
-		if ($algo == 'HS384') return "SHA384";
-		if ($algo == 'HS512') return "SHA512";
-		if ($algo == 'RS256') return "SHA256";
-		if ($algo == 'RS384') return "SHA384";
-		if ($algo == 'RS512') return "SHA512";
-		return "";
-	}
-	
-	
-	
-	/**
-	 * Create jwt sign
-	 */
-	static function createSign($head_b64, $data_b64, $key, $algo)
-	{
-		$m = static::getMethod($algo);
-		$a = static::getAlgo($algo);
-		$text = $head_b64 . '.' . $data_b64;
-		$sign = "";
-		if ($m == "rsa") $sign = RSA::sign($text, $key, $a);
-		else if ($m == "hash") $sign = HASH::hash($text, $key, $a);
-		$sign = Utils::base64_encode_url($sign);
-		return $sign;
-	}
-	
-	
-	
-	/**
-	 * Validate jwt sign
-	 */
-	static function validateSign($head_b64, $data_b64, $sign, $key, $algo)
-	{
-		$m = static::getMethod($algo);
-		$a = static::getAlgo($algo);
-		$text = $head_b64 . '.' . $data_b64;
-		$flag = false;
-		$sign = Utils::base64_decode_url($sign);
-		if ($m == "rsa") $flag = RSA::verify($text, $sign, $key, $a);
-		else if ($m == "hash") $flag = HASH::verify($text, $sign, $key, $a);
-		return $flag;
-	}
-	
-	
-	
-	/**
-	 * Create jwt
-	 */
-	static function encode($d, $key, $algo)
-	{
-		$data_json = json_encode($d);
-		$data_b64 = Utils::base64_encode_url($data_json);
-		$head_b64 = Utils::base64_encode_url(json_encode(['alg'=>$algo,'typ'=>'JWT']));
-		$sign = static::createSign($head_b64, $data_b64, $key, $algo);
-		return $head_b64 . '.' . $data_b64 . '.' . $sign;
-	}
-	
-	
-	
-	/**
-	 * Decode jwt
-	 */
-	static function decode($token_str, $key, $algo = "", $check_sign = true)
-	{
-		$arr = explode(".", $token_str);
-		$head_b64 = isset($arr[0]) ? $arr[0] : "";
-		$data_b64 = isset($arr[1]) ? $arr[1] : "";
-		$sign = isset($arr[2]) ? $arr[2] : "";
-		
-		/* Decode head */
-		$head_json = base64_decode($head_b64);
-		$head = json_decode($head_json, true);
-		
-		/* Decode data */
-		$json = base64_decode($data_b64);
-		if ($json == "")
-		{
-			return
-			[
-				"head" => null,
-				"data" => null,
-				"valid" => false,
-			];
-		}
-		$data = json_decode($json, true);
-		
-		if ($head == null)
-			return
-			[
-				"head" => null,
-				"data" => $data,
-				"valid" => false,
-			];
-		
-		$token_algo = isset($head["alg"]) ? $head["alg"] : "";
-		if ($token_algo == "")
-			return
-			[
-				"head" => $head,
-				"data" => $data,
-				"valid" => false,
-			];
-		
-		if ($token_algo != $algo && $algo != "")
-		{
-			return
-			[
-				"head" => $head,
-				"data" => $data,
-				"valid" => false,
-			];
-		}
-		
-		/* Validate sign */
-		$valid = false;
-		if ($check_sign)
-		{
-			$valid = static::validateSign($head_b64, $data_b64, $sign, $key, $token_algo);
-		}
-		
-		return
-		[
-			"head" => $head,
-			"data" => $data,
-			"valid" => $valid,
-		];
-	}
-    
 	
 	
 	/**
@@ -203,7 +75,7 @@ class JWT
 	 */
 	function isExpired()
 	{
-		return true;
+		return $this->expires < time();
 	}
 	
 	
@@ -213,6 +85,8 @@ class JWT
 	 */
 	function setData($data)
 	{
+		$this->login = isset($data["l"]) ? $data["l"] : "";
+		$this->expires = isset($data["e"]) ? $data["e"] : 0;
 	}
 	
 	
@@ -222,7 +96,10 @@ class JWT
 	 */
 	function getData()
 	{
-		return [];
+		return [
+			"l" => $this->login,
+			"e" => $this->expires,
+		];
 	}
 	
 	
@@ -232,7 +109,10 @@ class JWT
 	 */
 	function toArray()
 	{
-		return [];
+		return [
+			"login" => $this->login,
+			"expires" => $this->expires,
+		];
 	}
 	
 	
@@ -242,7 +122,10 @@ class JWT
 	 */
 	function getPrivateKey()
 	{
-		return "";
+		$private_key = env("JWT_PRIVATE_KEY");
+		$res = json_decode( $private_key );
+		if ($res) return $res;
+		return $private_key;
 	}
 	
 	
@@ -252,7 +135,10 @@ class JWT
 	 */
 	function getPublicKey()
 	{
-		return "";
+		$private_key = env("JWT_PUBLIC_KEY");
+		$res = json_decode( $private_key );
+		if ($res) return $res;
+		return $private_key;
 	}
 	
 	
@@ -262,51 +148,8 @@ class JWT
 	 */
 	function getType()
 	{
-		return "RS512";
+		return "RS256";
 	}
 	
 	
-	
-	/**
-	 * Get jwt content
-	 */
-	function getJWT()
-	{
-		$data = $this->getData();
-		$key = $this->getPrivateKey();
-		$type = $this->getType();
-		return static::encode($data, $key, $type);
-	}
-	
-	
-	
-	/**
-	 * Build jwt
-	 */
-	function buildJWT()
-	{
-		$this->jwt = $this->getJWT();
-	}
-	
-	
-	
-	/**
-	 * Create jwt
-	 */
-	static function create($token_str, $check_sign = true)
-	{
-		$class_name = static::class;
-		$res = new $class_name();
-		
-		$key = $res->getPublicKey();
-		$type = $res->getType();
-		$decode = static::decode($token_str, $key, $type, $check_sign);
-		
-		if ($decode && $decode["data"] == null) return null;
-		
-		$res->jwt = $token_str;
-		$res->setData($decode["data"]);
-		$res->is_valid = $decode["valid"];
-		return $res;
-	}
 }

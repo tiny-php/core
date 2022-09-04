@@ -44,13 +44,38 @@ class ApiResult
 	var $error_str = "";
 	var $error_file = "";
 	var $error_line = "";
-	var $error_trace = "";
+	var $error_trace = [];
 	var $api_response = null;
 	var $url = null;
-	var $debug = null;
-	var $content = null;
+	var $ob_content = null;
+	var $res_content = null;
 	var $status_code = Response::HTTP_OK;
-
+	
+	
+	/**
+	 * Show
+	 */
+	function debug()
+	{
+		if ($this->ob_content)
+		{
+			echo $this->ob_content . "<br/>\n";
+		}
+		if ($this->error_code < 0)
+		{
+			echo "[" . $this->error_code . "] " . $this->error_str . " in ";
+			echo $this->error_file . ": " . $this->error_line . "<br/>\n";
+			echo "<b>Trace:</b> <br/>\n";
+			foreach ($this->error_trace as $key => $trace)
+			{
+				$msg = $trace["file"] . ": " . $trace["line"];
+				echo "${key}. ${msg}";
+				echo "<br/>\n";
+			}
+			echo "<br/>\n";
+		}
+	}
+	
 	
 	
 	/**
@@ -65,6 +90,9 @@ class ApiResult
 		$this->error_str = isset($error["str"]) ? $error["str"] : "";
 		$this->error_code = isset($error["code"]) ? $error["code"] : -1;
 		$this->error_name = isset($error["name"]) ? $error["name"] : -1;
+		$this->error_file = isset($error["file"]) ? $error["file"] : "";
+		$this->error_line = isset($error["line"]) ? $error["line"] : "";
+		$this->error_trace = isset($error["trace"]) ? $error["trace"] : [];
 	}
 	
 	
@@ -192,7 +220,7 @@ class ApiResult
 		$res =
 		[
 			"result" => $this->result,
-			"debug" => $ob_content,
+			"ob_content" => $ob_content,
 			"error" =>
 			[
 				"code" => $this->error_code,

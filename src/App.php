@@ -90,11 +90,11 @@ class App
 	
 	
 	/**
-	 * Returns enviroment variable
+	 * Returns settings value
 	 */
-	function def($key)
+	function settings($key)
 	{
-		return isset($this->defs[$key]) ? $this->defs[$key] : "";
+		return isset($this->defs["settings"][$key]) ? $this->defs["settings"][$key] : "";
 	}
 	
 	
@@ -152,11 +152,10 @@ class App
 			"twig" => \DI\create(\TinyPHP\Twig::class),
 			
 			/* App settings */
-			"settings" => function()
-			{
-				return [
-				];
-			},
+			"settings" => [
+				"jwt_cookie_key" => "",
+				"bus_env_key" => "",
+			],
 			
 			/* Other classes */
 			\TinyPHP\Auth::class => \DI\create(\TinyPHP\Auth::class),
@@ -164,6 +163,7 @@ class App
 			\TinyPHP\RenderContainer::class => \DI\create(\TinyPHP\RenderContainer::class),
 			\TinyPHP\RouteContainer::class => \DI\create(\TinyPHP\RouteContainer::class),
 			\TinyPHP\FatalError::class => \DI\create(\TinyPHP\FatalError::class),
+			\TinyPHP\Crypt\JWT::class => \DI\create(\TinyPHP\Crypt\JWT::class),
 		];
 	}
 	
@@ -453,6 +453,7 @@ class App
 	 */
 	function runWebApp()
 	{
+		$start_level = ob_get_level();
 		ob_start();
 		
 		$this->render_container = $this->createRenderContainer();
@@ -549,9 +550,9 @@ class App
 		/* Send response */
 		$this->render_container->sendResponse();
 		
-		while (ob_get_level() != 0)
+		while (ob_get_level() > $start_level)
 		{
-			ob_end_clean();
+			ob_end_flush();
 		}
 	}
 	

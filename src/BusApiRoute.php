@@ -52,7 +52,7 @@ class BusApiRoute extends ApiRoute
 		$sign = Utils::attr($post, ["sign"], "");
 		
 		/* Check sign */
-        $bus_key_name = app()->def("bus_key");
+        $bus_key_name = app()->settings("bus_env_key");
 		$bus_key_value = env( $bus_key_name );
 		$arr = array_keys($data); sort($arr);
 		array_unshift($arr, $time);
@@ -61,7 +61,7 @@ class BusApiRoute extends ApiRoute
 		
 		if ($sign != $sign2)
 		{
-			throw new \Exception("Bus sign error. Check " . $bus_key_name . " environment");
+			throw new \Exception("Bus sign error");
 		}
 	}
 	

@@ -32,9 +32,51 @@ namespace TinyPHP;
 class Module
 {
 	
-    static function twig_module_name()
-    {
-        return "tiny-php";
-    }
-    
+	static function twig_module_name()
+	{
+		return "tiny-php";
+	}
+	
+	
+	/**
+	 * Register hooks
+	 */
+	static function register_hooks()
+	{
+		add_chain("request_before", static::class, "init_auth");
+	}
+	
+	
+	/**
+	 * Init auth
+	 */
+	static function init_auth($res)
+	{
+		$app = app();
+		
+		$jwt = make(\TinyPHP\Crypt\JWT::class);
+		$jwt_cookie_key = $app->settings("jwt_cookie_key");
+		
+		/* Parse JWT */
+		if ($jwt_cookie_key)
+		{
+			$jwt_string = $res->container->cookie($jwt_cookie_key);
+			$jwt = $jwt::create($jwt_string);
+		}
+		else
+		{
+			$jwt = null;
+		}
+		
+		/* Setup Auth */
+		$auth = app(\TinyPHP\Auth::class);
+		$auth->init([
+			"jwt" => $jwt,
+		]);
+		
+		/* Setup context */
+		$res->container->setContext("auth", $auth);
+		$res->container->setContext("jwt", $jwt);
+	}
+	
 }
