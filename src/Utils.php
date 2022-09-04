@@ -60,7 +60,7 @@ class Utils
 	{
 		return function ($item) use ($keys)
 		{
-			return object_intersect($item, $keys);
+			return static::object_intersect($item, $keys);
 		};
 	}
 	
@@ -133,7 +133,8 @@ class Utils
 			$items
 		);
 	}
-	
+	static function toArray($items){ return static::listToArray($items); }
+	static function to_array($items){ return static::listToArray($items); }
 	
 	
 	/**
