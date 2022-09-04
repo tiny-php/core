@@ -102,10 +102,6 @@ class Bus
 		$result->url = $url;
 		$result->res_content = $out;
 		$result->ob_content = Utils::attr($response, "ob_content", "");
-		if ($result->ob_content == "")
-		{
-			$result->ob_content = Utils::attr($response, "debug", "");
-		}
 		$result->status_code = $code;
 		return $result;
 	}
@@ -118,34 +114,34 @@ class Bus
 	static function call($url, $data)
 	{
 		$url = preg_replace("/^\/+/", "", $url);
-		$arr = explode("/", $url, 3);
+		$arr = explode("/", $url, 2);
 		
 		$project = isset($arr[0]) ? $arr[0] : "";
-		$type = isset($arr[1]) ? $arr[1] : "";
+		$relative_url = isset($arr[1]) ? $arr[1] : "";
+		$relative_url = preg_replace("/^\/+/", "", $relative_url);
+		
+		/* Get gateway url */
+		$res = call_chain("bus_gateway", ["project"=>$project, "gateway"=>""]);
+		$gateway = $res->gateway;
+		$gateway = preg_replace("/\/+$/", "", $gateway);
+		
+		if ($gateway == "")
+		{
+			$result = new \TinyPHP\ApiResult();
+			$result->error(
+				null, 
+				"Gateway url for project '${project}' is empty",
+				ERROR_GATEWAY_API
+			);
+			return $result;
+		}
+		
+		return static::send_api_request($gateway . "/" . $relative_url, $data);
 		
 		/* Call bus */
 		if ($type == "bus")
 		{
-			$relative_url = isset($arr[2]) ? $arr[2] : "";
-			$relative_url = preg_replace("/^\/+/", "", $relative_url);
 			
-			/* Get gateway url */
-			$res = call_chain("bus_gateway", ["project"=>$project, "gateway"=>""]);
-			$gateway = $res->gateway;
-			$gateway = preg_replace("/\/+$/", "", $gateway);
-			
-			if ($gateway == "")
-			{
-				$result = new \TinyPHP\ApiResult();
-				$result->error(
-					null, 
-					"Gateway url for project '${project}' is empty",
-					ERROR_GATEWAY_API
-				);
-				return $result;
-			}
-			
-			return static::send_api_request($gateway . "/" . $relative_url, $data);
 		}
 		
 		else
