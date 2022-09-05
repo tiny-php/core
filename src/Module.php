@@ -122,7 +122,7 @@ class Module
 			if ($res->container->isApi())
 			{
 				$json = $res->container->response->getContent();
-				$json = @json_decode($json);
+				$json = @json_decode($json, true);
 				if ($json)
 				{
 					$json["ob_content"] = $ob_content;
