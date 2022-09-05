@@ -55,24 +55,31 @@ class ApiResult
 	/**
 	 * Show
 	 */
-	function debug()
+	function debug($show_content = false)
 	{
 		if ($this->ob_content)
 		{
 			echo $this->ob_content . "<br/>\n";
 		}
-		if ($this->error_code < 0)
+		if ($this->error_code < 0 && count($this->error_trace) > 0)
 		{
 			echo "[" . $this->error_code . "] " . $this->error_str . " in ";
 			echo $this->error_file . ": " . $this->error_line . "<br/>\n";
 			echo "<b>Trace:</b> <br/>\n";
 			foreach ($this->error_trace as $key => $trace)
 			{
-				$msg = $trace["file"] . ": " . $trace["line"];
-				echo "${key}. ${msg}";
-				echo "<br/>\n";
+				if (isset($trace["file"]) && isset($trace["line"]))
+				{
+					$msg = $trace["file"] . ": " . $trace["line"];
+					echo "${key}. ${msg}";
+					echo "<br/>\n";
+				}
 			}
 			echo "<br/>\n";
+		}
+		if ($show_content)
+		{
+			echo $this->res_content . "<br/>\n";
 		}
 	}
 	

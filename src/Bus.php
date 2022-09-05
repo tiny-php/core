@@ -136,23 +136,6 @@ class Bus
 		}
 		
 		return static::send_api_request($gateway . "/" . $relative_url, $data);
-		
-		/* Call bus */
-		if ($type == "bus")
-		{
-			
-		}
-		
-		else
-		{
-			$result = new \TinyPHP\ApiResult();
-			$result->error(
-				null, 
-				"Wrong type in bus call",
-				ERROR_GATEWAY_API
-			);
-			return $result;
-		}
 	}
 	
 }
