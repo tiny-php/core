@@ -221,7 +221,7 @@ class JWTCore
 	/**
 	 * Set data
 	 */
-	function setData($data)
+	protected function setData($data)
 	{
 	}
 	
@@ -307,6 +307,26 @@ class JWTCore
 		$res->jwt = $token_str;
 		$res->setData($decode["data"]);
 		$res->is_valid = $decode["valid"];
+		return $res;
+	}
+	
+	
+	/**
+	 * Create new instance
+	 */
+	static function newInstance($data)
+	{
+		$class_name = static::class;
+		$res = new $class_name();
+		
+		foreach ($data as $key => $value)
+		{
+			if (property_exists($res, $key))
+			{
+				$res->$key = $value;
+			}
+		}
+		
 		return $res;
 	}
 }

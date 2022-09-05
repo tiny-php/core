@@ -83,7 +83,7 @@ class JWT extends \TinyPHP\Crypt\JWTCore
 	/**
 	 * Set data
 	 */
-	function setData($data)
+	protected function setData($data)
 	{
 		$this->login = isset($data["l"]) ? $data["l"] : "";
 		$this->expires = isset($data["e"]) ? $data["e"] : 0;
