@@ -31,7 +31,7 @@ namespace TinyPHP;
 use TinyPHP\ApiResult;
 use TinyPHP\ApiRoute;
 use TinyPHP\RenderContainer;
-use TinyPHP\RouteContainer;
+use TinyPHP\RouteList;
 use TinyPHP\Utils;
 
 
@@ -52,12 +52,11 @@ class BusApiRoute extends ApiRoute
 		$sign = Utils::attr($post, ["sign"], "");
 		
 		/* Check sign */
-        $bus_key_name = app()->settings("bus_env_key");
-		$bus_key_value = env( $bus_key_name );
+		$bus_key = app()->settings("bus_key");
 		$arr = array_keys($data); sort($arr);
 		array_unshift($arr, $time);
 		$text = implode("|", $arr);
-		$sign2 = hash_hmac("SHA512", $text, $bus_key_value);
+		$sign2 = hash_hmac("SHA512", $text, $bus_key);
 		
 		if ($sign != $sign2)
 		{

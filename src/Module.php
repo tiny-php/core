@@ -28,6 +28,9 @@
 
 namespace TinyPHP;
 
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+
 
 class Module
 {
@@ -44,6 +47,8 @@ class Module
 	static function register_hooks()
 	{
 		add_chain("request_before", static::class, "init_auth");
+		add_chain("before_response", static::class, "create_response_if_does_not_exists", CHAIN_LAST - 1);
+		add_chain("before_response", static::class, "add_ob_content", CHAIN_LAST);
 	}
 	
 	
@@ -79,4 +84,57 @@ class Module
 		$res->container->setContext("jwt", $jwt);
 	}
 	
+	
+	
+	/**
+	 * Create response if does not exists
+	 */
+	static function create_response_if_does_not_exists($res)
+	{
+		if ($res->container->response == null)
+		{
+			$res->container->response = new Response
+			(
+				"",
+				200,
+				['content-type' => 'text/html']
+			);
+		}
+	}
+	
+	
+	
+	/**
+	 * Add ob content
+	 */
+	static function add_ob_content($res)
+	{
+		$ob_content = "";
+		if (ob_get_level() > 0)
+		{
+			$ob_content = ob_get_contents();
+			ob_end_clean();
+			ob_start();
+		}
+		
+		if ($res->container->response && $ob_content != "")
+		{
+			if ($res->container->isApi())
+			{
+				$json = $res->container->response->getContent();
+				$json = @json_decode($json);
+				if ($json)
+				{
+					$json["ob_content"] = $ob_content;
+					$res->container->response->setContent( json_encode($json) . "\n" );
+				}
+			}
+			else
+			{
+				$res->container->response->setContent(
+					$ob_content . $res->container->response->getContent()
+				);
+			}
+		}
+	}
 }

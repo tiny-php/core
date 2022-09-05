@@ -32,7 +32,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 
-class RouteContainer
+class RouteList
 {
 	var $routes = [];
 	var $routes_objects = [];
@@ -135,6 +135,8 @@ class RouteContainer
 				$request_uri = substr($request_uri, strlen($render_container->base_url));
 			}
 		}
+		
+		if ($request_uri == "") $request_uri = "/";
 		
 		/* Find route */
 		foreach ($this->routes as $route)

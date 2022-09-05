@@ -52,7 +52,7 @@ class Route
 	/**
 	 * Declare routes
 	 */
-	function routes(RouteContainer $route_container)
+	function routes(RouteList $route_container)
 	{
 	}
 	
@@ -156,8 +156,8 @@ class Route
 	static function url($route_name, $params = [])
 	{
 		$app = app();
-		$route_container = app(\TinyPHP\RouteContainer::class);
-		$url = $route_container->url($route_name, $params);
+		$routes = app(\TinyPHP\RouteList::class);
+		$url = $routes->url($route_name, $params);
 		$url = $app->render_container->base_url . $url;
 		$url = preg_replace("/\/+/", "/", $url);
 		return $url;
