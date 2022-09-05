@@ -40,7 +40,7 @@ class Bus
 		$time = time();
 		$bus_key = app()->settings("bus_key");
 		$arr = array_keys($data); sort($arr);
-		array_unshift($arr, $time);
+		array_push($arr, $time);
 		$text = implode("|", $arr);
 		$sign = hash_hmac("SHA512", $text, $bus_key);
 		
@@ -60,6 +60,7 @@ class Bus
 				"data" => $data,
 				"time" => $time,
 				"sign" => $sign,
+				"alg" => "sha512",
 			]
 		));
 		

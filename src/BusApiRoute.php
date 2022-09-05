@@ -46,19 +46,38 @@ class BusApiRoute extends ApiRoute
 		parent::request_before($container);
 		
 		/* Get post */
+		$bus_key = app()->settings("bus_key");
 		$post = json_decode($container->request->getContent(), true);
 		$data = Utils::attr($post, ["data"], []);
 		$time = Utils::attr($post, ["time"], "");
 		$sign = Utils::attr($post, ["sign"], "");
+		$alg = Utils::attr($post, ["alg"], "");
 		
 		/* Check sign */
-		$bus_key = app()->settings("bus_key");
-		$arr = array_keys($data); sort($arr);
-		array_unshift($arr, $time);
-		$text = implode("|", $arr);
-		$sign2 = hash_hmac("SHA512", $text, $bus_key);
-		
-		if ($sign != $sign2)
+		if ($alg == "md5")
+		{
+			$arr = array_keys($data); sort($arr);
+			array_push($arr, $time);
+			array_push($arr, $bus_key);
+			$text = implode("|", $arr);
+			$sign2 = md5($text);
+			if ($sign != $sign2)
+			{
+				throw new \Exception("Bus sign error");
+			}
+		}
+		else if ($alg == "sha512")
+		{
+			$arr = array_keys($data); sort($arr);
+			array_push($arr, $time);
+			$text = implode("|", $arr);
+			$sign2 = hash_hmac("SHA512", $text, $bus_key);
+			if ($sign != $sign2)
+			{
+				throw new \Exception("Bus sign error");
+			}
+		}
+		else
 		{
 			throw new \Exception("Bus sign error");
 		}
