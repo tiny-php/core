@@ -245,6 +245,22 @@ class ApiCrudRoute extends ApiRoute
 	
 	
 	/**
+	 * Default query
+	 */
+	public function buildDefaultQuery($action, $query)
+	{
+		$res = call_chain("api_crud_build_default_query", [
+			"route" => $this,
+			"query" => $query,
+			"action" => $action
+		]);
+		$query = $res["query"];
+		return $query;
+	}
+	
+	
+	
+	/**
 	 * Get item
 	 */
 	public function getItem($data)
@@ -303,7 +319,12 @@ class ApiCrudRoute extends ApiRoute
 	 */
 	public function refreshItem()
 	{
-		$this->item = $this->getItem( $this->item->getPk() );
+		$pk = $this->item->getPk();
+		$this->item = $this->getItem( $pk );
+		if ($this->item == null)
+		{
+			throw new \Exception("Refresh item is failed");
+		}
 	}
 	
 	
@@ -350,6 +371,7 @@ class ApiCrudRoute extends ApiRoute
 		
 		/* Search query */
 		$query = $this->buildSearchQuery("actionSearch", $query);
+		$query = $this->buildDefaultQuery("actionSearch", $query);
 		$items = $query->all();
 		
 		/* Result */
@@ -442,11 +464,21 @@ class ApiCrudRoute extends ApiRoute
 	/**
 	 * Do create
 	 */
+	function doCreateItem()
+	{
+		$class_name = $this->class_name;
+		$this->item = new $class_name();
+	}
+	
+	
+	
+	/**
+	 * Do create
+	 */
 	function doCreate()
 	{
 		/* Create item */
-		$class_name = $this->class_name;
-		$this->item = new $class_name();
+		$this->doCreateItem();
 		
 		/* Set data */
 		if ($this->update_data != null)
