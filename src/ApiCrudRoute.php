@@ -410,7 +410,9 @@ class ApiCrudRoute extends ApiRoute
 			throw new \Exception("Post item is empty");
 		}
 		
+		$this->post = $post;
 		$this->update_data = $update_data;
+		// $update_data = $this->toDatabase("actionCreate", $this->update_data);
 	}
 	
 	
