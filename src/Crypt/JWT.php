@@ -138,7 +138,7 @@ class JWT extends \TinyPHP\Crypt\JWTCore
 		$public_key = env("JWT_PUBLIC_KEY");
 		$res = json_decode( '"' . $public_key . '"' );
 		if ($res) return $res;
-		return $private_key;
+		return $public_key;
 	}
 	
 	
