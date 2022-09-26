@@ -57,29 +57,40 @@ class ApiResult
 	 */
 	function debug($show_content = false)
 	{
+		$res = "";
+		
 		if ($this->ob_content)
 		{
-			echo $this->ob_content . "<br/>\n";
+			$res .= $this->ob_content . "\n";
 		}
 		if ($this->error_code < 0 && count($this->error_trace) > 0)
 		{
-			echo "[" . $this->error_code . "] " . $this->error_str . " in ";
-			echo $this->error_file . ": " . $this->error_line . "<br/>\n";
-			echo "<b>Trace:</b> <br/>\n";
+			$res .= "[" . $this->error_code . "] " . $this->error_str . " in ";
+			$res .= $this->error_file . ": " . $this->error_line . "\n";
+			$res .= "<b>Trace:</b>\n";
 			foreach ($this->error_trace as $key => $trace)
 			{
 				if (isset($trace["file"]) && isset($trace["line"]))
 				{
 					$msg = $trace["file"] . ": " . $trace["line"];
-					echo "${key}. ${msg}";
-					echo "<br/>\n";
+					$res .= "${key}. ${msg}";
+					$res .= "\n";
 				}
 			}
-			echo "<br/>\n";
+			$res .= "\n";
 		}
 		if ($show_content)
 		{
-			echo $this->res_content . "<br/>\n";
+			$res .= $this->url . "\n";
+			$res .= "Status code: " . $this->status_code . "\n";
+			$res .= $this->res_content . "\n";
+		}
+		
+		if ($res)
+		{
+			echo "<pre>";
+			echo $res;
+			echo "</pre>";
 		}
 	}
 	
