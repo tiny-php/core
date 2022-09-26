@@ -125,7 +125,7 @@ class RouteList
 		$host = $render_container->request->getHost();
 		$uri = $render_container->request->getRequestUri();
 		$arr = parse_url($uri);
-		$request_uri = $arr["path"];
+		$request_uri = isset($arr["path"]) ? $arr["path"] : "";
 		
 		/* Base url */
 		if ($render_container->base_url != "")
