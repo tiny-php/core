@@ -41,6 +41,7 @@ class App
 	var $route_list = null;
 	var $render_container = null;
 	var $ob_start_level = 0;
+	var $fatal_error = null;
 	
 	protected $defs = [];
 	protected $di_container = null;
@@ -103,6 +104,26 @@ class App
 	
 	
 	/**
+	 * Add Shutdown
+	 */
+	function add_shutdown($fn)
+	{
+		$this->add_chain_fn("shutdown", $fn);
+	}
+	
+	
+	
+	/**
+	 * Add Shutdown
+	 */
+	function add_shutdown_pre($fn)
+	{
+		$this->add_chain_fn("shutdown_pre", $fn);
+	}
+	
+	
+	
+	/**
 	 * Add chain
 	 */
 	function add_chain($chain_name, $class_name, $method_name, $priority = 0)
@@ -111,6 +132,19 @@ class App
 		if (!isset($this->chains[$chain_name][$priority]))
 			$this->chains[$chain_name][$priority] = [];
 		$this->chains[$chain_name][$priority][] = [ $class_name, $method_name ];
+	}
+	
+	
+	
+	/**
+	 * Add chain fn
+	 */
+	function add_chain_fn($chain_name, $fn, $priority = 0)
+	{
+		if (!isset($this->chains[$chain_name])) $this->chains[$chain_name] = [];
+		if (!isset($this->chains[$chain_name][$priority]))
+			$this->chains[$chain_name][$priority] = [];
+		$this->chains[$chain_name][$priority][] = $fn;
 	}
 	
 	

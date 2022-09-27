@@ -38,7 +38,7 @@ define ("ERROR_WRONG_PERMISSION", -3);
 define ("ERROR_GATEWAY_API", -4);
 
 
-global $app;
+global $app, $tiny_php_fatal_error;
 $app = null;
 
 
@@ -126,7 +126,13 @@ function env($key)
  */
 function tiny_php_fatal_error($e)
 {
+	global $tiny_php_fatal_error;
+	
+	call_chain("fatal_error");
+	
 	$app = app();
+	if ($app){ $app->fatal_error = $e; }
+	$tiny_php_fatal_error = $e;
 	
 	$error = make(\TinyPHP\FatalError::class);
 	if ($error && $app != null && $app->render_container != null)
@@ -145,3 +151,28 @@ function tiny_php_fatal_error($e)
 	}
 }
 set_exception_handler("tiny_php_fatal_error");
+
+
+
+/**
+ * Shutdown
+ */
+function tiny_php_shutdown()
+{
+	global $tiny_php_fatal_error;
+	
+	if ($tiny_php_fatal_error)
+	{
+		return;
+	}
+	
+	call_chain("shutdown_pre");
+	
+	if (\function_exists('fastcgi_finish_request'))
+	{
+		fastcgi_finish_request();
+	}
+	
+	call_chain("shutdown");
+}
+register_shutdown_function("tiny_php_shutdown");

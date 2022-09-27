@@ -306,7 +306,8 @@ class RenderContainer
 		
 		if ($this->response)
 		{
-			$this->response->send();
+			$this->response->sendHeaders();
+			$this->response->sendContent();
 		}
 	}
 	
