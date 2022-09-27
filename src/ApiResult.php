@@ -99,18 +99,15 @@ class ApiResult
 	/**
 	 * Set api response
 	 */
-	function setApiResponse($response)
+	function setApiResult($api_result)
 	{
-		$error = isset($response["error"]) ? $response["error"] : [];
-		$this->clearError();
-		$this->api_response = $response;
-		if (isset($response["result"])) $this->result = $response["result"];
-		$this->error_str = isset($error["str"]) ? $error["str"] : "";
-		$this->error_code = isset($error["code"]) ? $error["code"] : -1;
-		$this->error_name = isset($error["name"]) ? $error["name"] : -1;
-		$this->error_file = isset($error["file"]) ? $error["file"] : "";
-		$this->error_line = isset($error["line"]) ? $error["line"] : "";
-		$this->error_trace = isset($error["trace"]) ? $error["trace"] : [];
+		$this->result = $api_result->result;
+		$this->error_str = $api_result->error_str;
+		$this->error_code = $api_result->error_code;
+		$this->error_name = $api_result->error_name;
+		$this->error_file = $api_result->error_file;
+		$this->error_line = $api_result->error_line;
+		$this->error_trace = $api_result->error_trace;
 	}
 	
 	

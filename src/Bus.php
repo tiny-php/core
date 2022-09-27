@@ -98,7 +98,18 @@ class Bus
 		}
 		
 		$result = new \TinyPHP\ApiResult();
-		$result->setApiResponse( $response );
+		
+		/* set ApiResponse */
+		$error = isset($response["error"]) ? $response["error"] : [];
+		$result->clearError();
+		$result->api_response = $response;
+		if (isset($response["result"])) $result->result = $response["result"];
+		$result->error_str = isset($error["str"]) ? $error["str"] : "";
+		$result->error_code = isset($error["code"]) ? $error["code"] : -1;
+		$result->error_name = isset($error["name"]) ? $error["name"] : -1;
+		$result->error_file = isset($error["file"]) ? $error["file"] : "";
+		$result->error_line = isset($error["line"]) ? $error["line"] : "";
+		$result->error_trace = isset($error["trace"]) ? $error["trace"] : [];
 		$result->url = $url;
 		$result->res_content = $out;
 		$result->ob_content = Utils::attr($response, "ob_content", "");
